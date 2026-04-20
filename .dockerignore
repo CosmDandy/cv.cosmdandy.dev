@@ -1,0 +1,5 @@
+.git
+output/
+_site/
+template/preview.*
+*.pdf

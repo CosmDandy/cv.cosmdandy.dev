@@ -1,0 +1,110 @@
+name: Build and Deploy CV
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore: [Dockerfile, texlive.profile, .dockerignore]
+  workflow_run:
+    workflows: ["Build Docker Image"]
+    types: [completed]
+    branches: [main, master]
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    container:
+      image: ghcr.io/cosmdandy/cv-texlive:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject CV data
+        run: |
+          if [ -z "${{ secrets.CV_DATA }}" ]; then
+            echo "::warning::CV_DATA secret is empty, using example data"
+            cp cv-data.example.yaml cv-data.yaml
+          else
+            echo "${{ secrets.CV_DATA }}" | base64 -d > cv-data.yaml
+          fi
+
+      - name: Validate CV data
+        run: python3 -c "import yaml; d=yaml.safe_load(open('cv-data.yaml')); assert d, 'cv-data.yaml is empty'; print('OK:', len(d), 'top-level keys')"
+
+      - name: Generate LaTeX
+        run: |
+          python3 scripts/build.py --data cv-data.yaml --lang ru,en --output output/
+          python3 scripts/build.py --data cv-data.yaml --lang ru,en --output output/ --template ats
+
+      - name: Compile LaTeX to PDF
+        run: |
+          cd output/
+          latexmk -xelatex -interaction=nonstopmode CV-Timofey-Kondrashin-ru.tex
+          latexmk -xelatex -interaction=nonstopmode CV-Timofey-Kondrashin-en.tex
+          latexmk -xelatex -interaction=nonstopmode CV-Timofey-Kondrashin-ats-ru.tex
+          latexmk -xelatex -interaction=nonstopmode CV-Timofey-Kondrashin-ats-en.tex
+
+      - name: Convert PDF to WebP
+        run: |
+          cd output/
+          for lang in en ru; do
+            pdftoppm -r 300 -png "CV-Timofey-Kondrashin-${lang}.pdf" "page-${lang}"
+            for f in page-${lang}-*.png; do
+              page_num=$(echo "$f" | grep -o '[0-9]*\.png' | grep -o '[0-9]*')
+              cwebp -q 92 "$f" -o "cv-${lang}-${page_num}.webp"
+              cwebp -q 88 -resize 1240 0 "$f" -o "cv-${lang}-${page_num}-sm.webp"
+              rm "$f"
+            done
+          done
+
+      - name: Upload PDF artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv-pdfs
+          path: |
+            output/CV-Timofey-Kondrashin-ru.pdf
+            output/CV-Timofey-Kondrashin-en.pdf
+            output/CV-Timofey-Kondrashin-ats-ru.pdf
+            output/CV-Timofey-Kondrashin-ats-en.pdf
+          retention-days: 7
+
+      - name: Prepare Pages content
+        run: |
+          mkdir -p _site/fonts
+          cp output/CV-Timofey-Kondrashin-ru.pdf _site/
+          cp output/CV-Timofey-Kondrashin-en.pdf _site/
+          cp output/cv-*.webp _site/
+          cp pages/index.html _site/
+          cp pages/fonts/*.woff2 _site/fonts/
+          cp CNAME _site/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

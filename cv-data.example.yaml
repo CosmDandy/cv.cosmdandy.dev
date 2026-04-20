@@ -1,0 +1,189 @@
+personal:
+  name:
+    ru: "Тимофей Кондрашин"
+    en: "Timofey Kondrashin"
+  title:
+    ru: "DevOps-инженер"
+    en: "DevOps Engineer"
+  contacts:
+    telegram:
+      handle: "@CosmDandy"
+      url: "https://t.me/CosmDandy"
+    email: "i@cosmdandy.dev"
+    github:
+      handle: "CosmDandy"
+      url: "https://github.com/CosmDandy"
+    # location:
+    #   ru: "Москва, Россия"
+    #   en: "Moscow, Russia"
+    linkedin:
+      handle: "in/cosmdandy"
+      url: "https://www.linkedin.com/in/cosmdandy"
+
+summary:
+  ru: >-
+    DevOps-инженер с 3+ годами опыта в проектировании и поддержке
+    CI/CD-пайплайнов, управлении Kubernetes-кластерами и автоматизации
+    инфраструктуры. Специализируюсь на построении надёжных и масштабируемых
+    систем с использованием IaC-подхода и GitOps-практик.
+  en: >-
+    DevOps Engineer with 3+ years of experience designing and maintaining
+    CI/CD pipelines, managing Kubernetes clusters, and automating
+    infrastructure. Specializing in building reliable and scalable systems
+    using IaC approach and GitOps practices.
+
+skills:
+  - category:
+      ru: "Cloud & IaC"
+      en: "Cloud & IaC"
+    tools: "Yandex Cloud, AWS, Terraform, Ansible"
+  - category:
+      ru: "Контейнеризация"
+      en: "Containers"
+    tools: "Docker, Kubernetes, Helm, Docker Compose"
+  - category:
+      ru: "CI/CD"
+      en: "CI/CD"
+    tools: "GitLab CI, GitHub Actions, ArgoCD"
+  - category:
+      ru: "Мониторинг"
+      en: "Monitoring"
+    tools: "Prometheus, Grafana, ELK, Loki"
+  - category:
+      ru: "Языки"
+      en: "Languages"
+    tools: "Python, Bash, Go"
+  - category:
+      ru: "Прочее"
+      en: "Other"
+    tools: "Linux, Git, Nginx, PostgreSQL, Redis, HashiCorp Vault"
+
+experience:
+  - company: "TechCorp"
+    role:
+      ru: "DevOps-инженер"
+      en: "DevOps Engineer"
+    period:
+      ru: "03/2024 -- н.в."
+      en: "03/2024 -- present"
+    duration:
+      ru: "1 год 1 месяц"
+      en: "1 year 1 month"
+    type:
+      ru: "Компания"
+      en: "Company"
+    bullets:
+      ru:
+        - "Спроектировал и развернул Kubernetes-кластер (3 master + 12 worker nodes), обслуживающий 40+ микросервисов с 99.95\\% uptime"
+        - "Сократил время деплоя с 45 минут до 8 минут, внедрив GitLab CI/CD с ArgoCD и Helm-чартами"
+        - "Автоматизировал инфраструктуру на Terraform (50+ модулей), сократив время создания новых окружений с 2 дней до 30 минут"
+        - "Внедрил стек мониторинга Prometheus + Grafana + Loki, сократив MTTD с 25 минут до 3 минут"
+      en:
+        - "Designed and deployed Kubernetes cluster (3 master + 12 worker nodes) serving 40+ microservices with 99.95\\% uptime"
+        - "Reduced deployment time from 45 min to 8 min by implementing GitLab CI/CD with ArgoCD and Helm charts"
+        - "Automated infrastructure with Terraform (50+ modules), reducing new environment provisioning from 2 days to 30 min"
+        - "Implemented Prometheus + Grafana + Loki monitoring stack, reducing MTTD from 25 min to 3 min"
+    tech: "Kubernetes, Terraform, GitLab CI, ArgoCD, Helm, Prometheus, Grafana, Loki"
+
+  - company: "StartupXYZ"
+    role:
+      ru: "Junior DevOps-инженер"
+      en: "Junior DevOps Engineer"
+    period:
+      ru: "06/2022 -- 02/2024"
+      en: "06/2022 -- 02/2024"
+    duration:
+      ru: "1 год 9 месяцев"
+      en: "1 year 9 months"
+    type:
+      ru: "Компания"
+      en: "Company"
+    bullets:
+      ru:
+        - "Перевёл 15 сервисов из Docker Compose в Kubernetes, обеспечив горизонтальное масштабирование и отказоустойчивость"
+        - "Настроил CI/CD-пайплайны в GitHub Actions для 10 репозиториев, сократив цикл релиза с 1 недели до 1 дня"
+        - "Снизил расходы на облачную инфраструктуру на 35\\% (\\$4,200/мес) за счёт rightsizing и spot-инстансов"
+      en:
+        - "Migrated 15 services from Docker Compose to Kubernetes, enabling horizontal scaling and high availability"
+        - "Configured CI/CD pipelines in GitHub Actions for 10 repositories, reducing release cycle from 1 week to 1 day"
+        - "Reduced cloud infrastructure costs by 35\\% (\\$4,200/mo) through rightsizing and spot instances"
+    tech: "Docker, Kubernetes, GitHub Actions, AWS, Terraform, Ansible"
+
+education:
+  - degree:
+      ru: "Бакалавр, Информационные Технологии, Большие и Открытые данные"
+      en: "B.Sc. Information Technology, Big and Open Data"
+    institution:
+      ru: "Московский политехнический университет"
+      en: "Moscow Polytechnic University"
+    period: "09/2021 -- 06/2025"
+    type:
+      ru: "Университет"
+      en: "University"
+
+  - degree:
+      ru: "Промышленное программирование на Python"
+      en: "Industrial Python Programming"
+    institution:
+      ru: "Яндекс Лицей"
+      en: "Yandex Lyceum"
+    period: "09/2019 -- 05/2021"
+    type:
+      ru: "Образовательная программа"
+      en: "Educational Program"
+    cert_url: "https://yastatic.net/s3/lyceum/2021-certs/219929071-baa642e7-45dd-4b1d-bb9c-e0fa3a267322.pdf"
+
+projects:
+  - name: "Homelab K8s Platform"
+    type:
+      ru: "Личный проект"
+      en: "Personal Project"
+    url: ""
+    description:
+      ru: >-
+        Развернул домашний Kubernetes-кластер на 3 нодах с GitOps (ArgoCD),
+        мониторингом (Prometheus + Grafana) и автоматическим бэкапированием (Velero)
+      en: >-
+        Deployed 3-node home Kubernetes cluster with GitOps (ArgoCD),
+        monitoring (Prometheus + Grafana), and automated backups (Velero)
+
+  - name: "CV-as-Code"
+    type:
+      ru: "Open Source"
+      en: "Open Source"
+    url: "https://github.com/CosmDandy/CV"
+    description:
+      ru: >-
+        Шаблонизированное резюме: YAML-данные + Jinja2 + LaTeX,
+        CI/CD через GitHub Actions, деплой на GitHub Pages
+      en: >-
+        Templated resume: YAML data + Jinja2 + LaTeX,
+        CI/CD via GitHub Actions, deployed to GitHub Pages
+
+languages:
+  - lang:
+      ru: "English"
+      en: "English"
+    level: "B1+"
+  - lang:
+      ru: "Русский"
+      en: "Russian"
+    level:
+      ru: "Родной"
+      en: "Native"
+
+sections:
+  ru:
+    about: "О себе"
+    skills: "Профессиональные навыки"
+    experience: "Опыт работы"
+    education: "Образование"
+    projects: "Проекты"
+    languages: "Языки"
+  en:
+    about: "About"
+    skills: "Professional Skills"
+    experience: "Work Experience"
+    education: "Education"
+    projects: "Projects"
+    languages: "Languages"

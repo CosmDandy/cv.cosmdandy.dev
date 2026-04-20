@@ -1,31 +1,67 @@
-# Шаблон для проектов с DevPod
+# CV-as-Code
 
-Этот репозиторий является отправной точкой для проектов при работе с которыми я использую [DevPod](https://devpod.sh/)
+Templated resume built with LaTeX, generated from YAML data via Jinja2, compiled and deployed automatically through GitHub Actions to GitHub Pages.
+
+**Live:** [cv.cosmdandy.dev](https://cv.cosmdandy.dev)
+
+## Structure
+
+```
+cv/
+├── template/
+│   ├── cv.tex.j2              Jinja2 template (bilingual)
+│   └── developercv.cls        LaTeX document class
+├── scripts/
+│   └── build.py               YAML + Jinja2 → LaTeX generator
+├── pages/
+│   ├── fonts/                 Self-hosted Inter font
+│   └── index.html             Landing page
+├── .github/workflows/
+│   ├── build-deploy.yml       Build PDF, convert to WebP, deploy to Pages
+│   └── docker-image.yml       Build custom TeX Live Docker image
+├── cv-data.example.yaml       Example CV data
+├── cv-data.yaml               Your data (gitignored, injected via secret)
+├── Dockerfile                 Custom TeX Live image for fast CI builds
+└── Makefile                   Local build commands
+```
+
+## Use as Your Own CV
+
+1. **Fork** this repository
+
+2. **Fill in your data** — copy the example and edit:
+   ```bash
+   cp cv-data.example.yaml cv-data.yaml
+   ```
+
+3. **Add the `CV_DATA` secret** to your GitHub repo (Settings → Secrets → Actions):
+   ```bash
+   # macOS
+   base64 < cv-data.yaml | pbcopy
+   # Linux
+   base64 -w 0 < cv-data.yaml
+   ```
+   Paste the output as the value of `CV_DATA`.
+
+4. **Update `CNAME`** with your domain, or delete it to use `username.github.io/cv`
+
+5. **Enable GitHub Pages:** Settings → Pages → Source: **GitHub Actions**
+
+6. **Push** — the pipeline builds the PDF, converts it to WebP, and deploys
+
+## Local Development
+
+**Requirements:** Python 3.9+, LaTeX with XeTeX
 
 ```bash
-devpod up git@github.com:CosmDandy/template-devpod.git --id template-devpod-[...] --provider [...]
-```
+pip install -r requirements.txt
 
-## [Docker in docker](https://github.com/devcontainers/features/tree/main/src/docker-in-docker)
+# Generate .tex and compile to PDF
+make build
 
-```
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-  },
-```
+# Build using example data (no real data needed)
+make build-example
 
-## [Docker outside of docker](https://github.com/devcontainers/features/tree/main/src/docker-outside-of-docker)
-
-```
-  "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
-  ],
-  "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
-  },
-  "runArgs": [
-    "--privileged",
-    "--pid=host",
-    "--network=host"
-  ],
+# Generate .tex only (no LaTeX required)
+make render
 ```

@@ -1,0 +1,178 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Developer CV — generated from cv-data.yaml via Jinja2
+% Template: developercv.cls v2.0
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[9pt]{developercv}
+\usepackage{multicol}
+\setlength{\columnsep}{0mm}
+
+\begin{document}
+
+((* if lang == "ru" *))
+\selectlanguage{russian}
+((* else *))
+\selectlanguage{english}
+((* endif *))
+
+%----------------------------------------------------------------------------------------
+%	TITLE AND CONTACT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\begin{minipage}[t]{0.45\textwidth}
+	\vspace{-\baselineskip}
+
+	\vspace{15pt}
+
+		{ \fontsize{16}{20} \textcolor{black}{\textbf{\MakeUppercase{((( personal.name[lang] | e )))}}}}
+
+	\vspace{6pt}
+
+	{\Large ((( personal.title[lang] | e )))}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.24\textwidth}
+	\vspace{-\baselineskip}
+	\vspace{15pt}
+
+	\icon{TelegramPlane}{11}{\href{((( personal.contacts.telegram.url )))}{((( personal.contacts.telegram.handle | e )))}}\\
+	\icon{Envelope}{11}{\href{mailto:((( personal.contacts.email )))}{((( personal.contacts.email | e )))}}\\
+((* if personal.contacts.phone is defined *))
+    \icon{Phone}{11}{((( personal.contacts.phone | e )))}\\
+((* endif *))
+((* if personal.contacts.location is defined *))
+    \icon{MapMarkerAlt}{11}{((( personal.contacts.location[lang] | e )))}\\
+((* endif *))
+\end{minipage}
+\begin{minipage}[t]{0.27\textwidth}
+	\vspace{-\baselineskip}
+	\vspace{15pt}
+
+    \icon{Github}{11}{\href{((( personal.contacts.github.url )))}{github.com/((( personal.contacts.github.handle | e )))}}\\
+((* if personal.contacts.linkedin is defined *))
+	\icon{Linkedin}{11}{\href{((( personal.contacts.linkedin.url )))}{((( personal.contacts.linkedin.handle | e )))}}\\
+((* endif *))
+\end{minipage}
+
+%----------------------------------------------------------------------------------------
+%	INTRODUCTION, SKILLS AND TECHNOLOGIES
+%----------------------------------------------------------------------------------------
+
+\begin{minipage}[t]{0.45\textwidth}
+    \cvsect{((( sections[lang].about )))}
+	\vspace{-6pt}
+
+	((( summary[lang] | e )))
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.51\textwidth}
+    \cvsect{((( sections[lang].skills )))}
+    \vspace{-6pt}
+
+((* for skill in skills *))
+    \begin{minipage}[t]{0.28\textwidth}
+        \textbf{((( skill.category[lang] | e ))):}
+    \end{minipage}%
+    \begin{minipage}[t]{0.70\textwidth}
+      ((( skill.tools | e )))
+    \end{minipage}
+((* if not loop.last *))
+    \vspace{1mm}
+((* endif *))
+
+((* endfor *))
+\end{minipage}
+
+%----------------------------------------------------------------------------------------
+%	EXPERIENCE
+%----------------------------------------------------------------------------------------
+\cvsect{((( sections[lang].experience )))}
+\begin{entrylist}
+((* for job in experience *))
+((* if job.positions is defined *))
+((* set job_idx = loop.index0 *))
+((* for pos in job.positions *))
+	\entrywork
+        {((( pos.period[lang] )))\timelinemark{tl-((( job_idx )))-((( loop.index0 )))}\\\footnotesize{((( pos.duration[lang] )))}}
+		{((( pos.role[lang] | e )))}
+		{((* if loop.first *))((( job.company | e )))((* endif *))}
+		{\vspace{-4pt}
+        \begin{itemize}[noitemsep,topsep=2pt,parsep=1pt,partopsep=0pt, leftmargin=0pt]
+((* for bullet in pos.bullets[lang] *))
+        	\item ((( bullet )))
+((* endfor *))
+        \end{itemize}
+        \vspace{2pt}
+        \texttt{((( pos.tech | e )))}}
+((* endfor *))
+((* for i in range(job.positions|length - 1) *))
+\timelinesegment{tl-((( job_idx )))-((( i )))}{tl-((( job_idx )))-((( i + 1 )))}
+((* endfor *))
+((* for i in range(job.positions|length) *))
+\timelinedot{tl-((( job_idx )))-((( i )))}
+((* endfor *))
+((* else *))
+	\entrywork
+        {((( job.period[lang] ))) \\\footnotesize{((( job.duration[lang] )))}}
+		{((( job.role[lang] | e )))}
+		{((( job.company | e )))}
+		{\vspace{-4pt}
+        \begin{itemize}[noitemsep,topsep=2pt,parsep=1pt,partopsep=0pt, leftmargin=0pt]
+((* for bullet in job.bullets[lang] *))
+        	\item ((( bullet )))
+((* endfor *))
+        \end{itemize}
+        \vspace{2pt}
+        \texttt{((( job.tech | e )))}}
+((* endif *))
+((* endfor *))
+\end{entrylist}
+
+%----------------------------------------------------------------------------------------
+%	EDUCATION
+%----------------------------------------------------------------------------------------
+\vspace{-10pt}
+\cvsect{((( sections[lang].education )))}
+\begin{entrylist}
+((* for edu in education *))
+    \entry
+        {((( edu.period )))}
+((* if edu.cert_url is defined *))
+        {((( edu.degree[lang] | e ))) / \href{((( edu.cert_url )))}{((* if lang == "ru" *))Сертификат((* else *))Certificate((* endif *))}}
+((* else *))
+        {((( edu.degree[lang] | e )))}
+((* endif *))
+        {((( edu.type[lang] | e )))}
+        {((( edu.institution[lang] | e )))}
+((* endfor *))
+\end{entrylist}
+
+%----------------------------------------------------------------------------------------
+%	PROJECTS
+%----------------------------------------------------------------------------------------
+\vspace{-10pt}
+\cvsect{((( sections[lang].projects )))}
+\begin{entrylist}
+((* for project in projects *))
+	\entry
+		{((( project.type[lang] | e )))}
+		{((( project.name | e )))}
+((* if project.url *))
+		{\href{((( project.url )))}{((( project.url | replace("https://", "") | e )))}}
+((* else *))
+		{}
+((* endif *))
+		{((( project.description[lang] | e )))}
+((* endfor *))
+\end{entrylist}
+
+%----------------------------------------------------------------------------------------
+%	LANGUAGES
+%----------------------------------------------------------------------------------------
+\vspace{-20pt}
+	\cvsect{((( sections[lang].languages )))}
+    \vspace{-8pt}
+
+    \hspace{36mm}((* for l in languages *))((* if not loop.first *)) \hspace{4mm} ((* endif *))\textbf{((( l.lang[lang] | e )))} -- ((( l.level[lang] if l.level is mapping else l.level )))((* endfor *))
+
+\end{document}

@@ -1,0 +1,144 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Developer CV — ATS-friendly single-column layout
+% Generated from cv-data.yaml via Jinja2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[9pt]{developercv-ats}
+
+\begin{document}
+
+((* if lang == "ru" *))
+\selectlanguage{russian}
+((* else *))
+\selectlanguage{english}
+((* endif *))
+
+%----------------------------------------------------------------------------------------
+%	TITLE AND CONTACT INFORMATION
+%----------------------------------------------------------------------------------------
+
+{\fontsize{16}{20} \textcolor{black}{\textbf{\MakeUppercase{((( personal.name[lang] | e )))}}}}
+
+\vspace{4pt}
+
+{\Large ((( personal.title[lang] | e )))}
+
+\vspace{6pt}
+
+((( personal.contacts.email | e ))) \hspace{4mm}
+\href{((( personal.contacts.telegram.url )))}{((( personal.contacts.telegram.handle | e )))} \hspace{4mm}
+\href{((( personal.contacts.github.url )))}{github.com/((( personal.contacts.github.handle | e )))}
+((* if personal.contacts.linkedin is defined *))
+\hspace{4mm} \href{((( personal.contacts.linkedin.url )))}{linkedin.com/((( personal.contacts.linkedin.handle | e )))}
+((* endif *))
+((* if personal.contacts.phone is defined *))
+\hspace{4mm} ((( personal.contacts.phone | e )))
+((* endif *))
+((* if personal.contacts.location is defined *))
+\hspace{4mm} ((( personal.contacts.location[lang] | e )))
+((* endif *))
+
+%----------------------------------------------------------------------------------------
+%	SUMMARY
+%----------------------------------------------------------------------------------------
+\cvsect{((( sections[lang].about )))}
+\vspace{-6pt}
+
+((( summary[lang] | e )))
+
+%----------------------------------------------------------------------------------------
+%	SKILLS
+%----------------------------------------------------------------------------------------
+\cvsect{((( sections[lang].skills )))}
+\vspace{-6pt}
+
+((* for skill in skills *))
+\textbf{((( skill.category[lang] | e ))):} ((( skill.tools | e )))((* if not loop.last *)) \\((* endif *))
+((* endfor *))
+
+%----------------------------------------------------------------------------------------
+%	EXPERIENCE
+%----------------------------------------------------------------------------------------
+\cvsect{((( sections[lang].experience )))}
+\begin{entrylist}
+((* for job in experience *))
+((* if job.positions is defined *))
+((* for pos in job.positions *))
+	\entrywork
+        {((( pos.period[lang] )))\\\footnotesize{((( pos.duration[lang] )))}}
+		{((( pos.role[lang] | e )))}
+		{((* if loop.first *))((( job.company | e )))((* endif *))}
+		{\vspace{-4pt}
+        \begin{itemize}[noitemsep,topsep=2pt,parsep=1pt,partopsep=0pt, leftmargin=0pt]
+((* for bullet in pos.bullets[lang] *))
+        	\item ((( bullet )))
+((* endfor *))
+        \end{itemize}
+        \vspace{2pt}
+        \texttt{((( pos.tech | e )))}}
+((* endfor *))
+((* else *))
+	\entrywork
+        {((( job.period[lang] ))) \\\footnotesize{((( job.duration[lang] )))}}
+		{((( job.role[lang] | e )))}
+		{((( job.company | e )))}
+		{\vspace{-4pt}
+        \begin{itemize}[noitemsep,topsep=2pt,parsep=1pt,partopsep=0pt, leftmargin=0pt]
+((* for bullet in job.bullets[lang] *))
+        	\item ((( bullet )))
+((* endfor *))
+        \end{itemize}
+        \vspace{2pt}
+        \texttt{((( job.tech | e )))}}
+((* endif *))
+((* endfor *))
+\end{entrylist}
+
+%----------------------------------------------------------------------------------------
+%	EDUCATION
+%----------------------------------------------------------------------------------------
+\vspace{-10pt}
+\cvsect{((( sections[lang].education )))}
+\begin{entrylist}
+((* for edu in education *))
+    \entry
+        {((( edu.period )))}
+((* if edu.cert_url is defined *))
+        {((( edu.degree[lang] | e ))) / \href{((( edu.cert_url )))}{((* if lang == "ru" *))Сертификат((* else *))Certificate((* endif *))}}
+((* else *))
+        {((( edu.degree[lang] | e )))}
+((* endif *))
+        {((( edu.type[lang] | e )))}
+        {((( edu.institution[lang] | e )))}
+((* endfor *))
+\end{entrylist}
+
+%----------------------------------------------------------------------------------------
+%	PROJECTS
+%----------------------------------------------------------------------------------------
+\vspace{-10pt}
+\cvsect{((( sections[lang].projects )))}
+\begin{entrylist}
+((* for project in projects *))
+	\entry
+		{((( project.type[lang] | e )))}
+		{((( project.name | e )))}
+((* if project.url *))
+		{\href{((( project.url )))}{((( project.url | replace("https://", "") | e )))}}
+((* else *))
+		{}
+((* endif *))
+		{((( project.description[lang] | e )))}
+((* endfor *))
+\end{entrylist}
+
+%----------------------------------------------------------------------------------------
+%	LANGUAGES
+%----------------------------------------------------------------------------------------
+\vspace{-20pt}
+	\cvsect{((( sections[lang].languages )))}
+    \vspace{-8pt}
+
+    \hspace{36mm}((* for l in languages *))((* if not loop.first *)) \hspace{4mm} ((* endif *))\textbf{((( l.lang[lang] | e )))} -- ((( l.level[lang] if l.level is mapping else l.level )))((* endfor *))
+
+\end{document}
