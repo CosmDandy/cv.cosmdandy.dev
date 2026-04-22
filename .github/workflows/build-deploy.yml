@@ -31,9 +31,22 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      CV_LANG_EN: ${{ vars.CV_LANG_EN || 'true' }}
+      CV_LANG_RU: ${{ vars.CV_LANG_RU || 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Determine enabled languages
+        id: langs
+        run: |
+          LANGS=""
+          if [ "$CV_LANG_EN" = "true" ]; then LANGS="en"; fi
+          if [ "$CV_LANG_RU" = "true" ]; then LANGS="${LANGS:+$LANGS,}ru"; fi
+          if [ -z "$LANGS" ]; then echo "::error::At least one language must be enabled"; exit 1; fi
+          echo "list=$LANGS" >> "$GITHUB_OUTPUT"
+          echo "Enabled languages: $LANGS"
 
       - name: Inject CV data
         run: |
@@ -49,21 +62,21 @@ jobs:
 
       - name: Generate LaTeX
         run: |
-          python3 scripts/build.py --data cv-data.yaml --lang ru,en --output output/
-          python3 scripts/build.py --data cv-data.yaml --lang ru,en --output output/ --template ats
+          python3 scripts/build.py --data cv-data.yaml --lang ${{ steps.langs.outputs.list }} --output output/
+          python3 scripts/build.py --data cv-data.yaml --lang ${{ steps.langs.outputs.list }} --output output/ --template ats
 
       - name: Compile LaTeX to PDF
         run: |
           cd output/
-          latexmk -xelatex -interaction=nonstopmode CV-Timofey-Kondrashin-ru.tex
-          latexmk -xelatex -interaction=nonstopmode CV-Timofey-Kondrashin-en.tex
-          latexmk -xelatex -interaction=nonstopmode CV-Timofey-Kondrashin-ats-ru.tex
-          latexmk -xelatex -interaction=nonstopmode CV-Timofey-Kondrashin-ats-en.tex
+          for lang in $(echo "${{ steps.langs.outputs.list }}" | tr ',' ' '); do
+            latexmk -xelatex -interaction=nonstopmode "CV-Timofey-Kondrashin-${lang}.tex"
+            latexmk -xelatex -interaction=nonstopmode "CV-Timofey-Kondrashin-ats-${lang}.tex"
+          done
 
       - name: Convert PDF to WebP
         run: |
           cd output/
-          for lang in en ru; do
+          for lang in $(echo "${{ steps.langs.outputs.list }}" | tr ',' ' '); do
             pdftoppm -r 300 -png "CV-Timofey-Kondrashin-${lang}.pdf" "page-${lang}"
             for f in page-${lang}-*.png; do
               page_num=$(echo "$f" | grep -o '[0-9]*\.png' | grep -o '[0-9]*')
@@ -77,20 +90,17 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cv-pdfs
-          path: |
-            output/CV-Timofey-Kondrashin-ru.pdf
-            output/CV-Timofey-Kondrashin-en.pdf
-            output/CV-Timofey-Kondrashin-ats-ru.pdf
-            output/CV-Timofey-Kondrashin-ats-en.pdf
+          path: output/CV-Timofey-Kondrashin-*.pdf
           retention-days: 7
 
       - name: Prepare Pages content
         run: |
           mkdir -p _site/fonts
-          cp output/CV-Timofey-Kondrashin-ru.pdf _site/
-          cp output/CV-Timofey-Kondrashin-en.pdf _site/
+          for lang in $(echo "${{ steps.langs.outputs.list }}" | tr ',' ' '); do
+            cp "output/CV-Timofey-Kondrashin-${lang}.pdf" _site/
+          done
           cp output/cv-*.webp _site/
-          cp pages/index.html _site/
+          python3 scripts/build_pages.py --langs ${{ steps.langs.outputs.list }} --input pages/index.html --output _site/index.html
           cp pages/fonts/*.woff2 _site/fonts/
           cp CNAME _site/
 
