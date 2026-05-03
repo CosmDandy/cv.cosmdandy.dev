@@ -6,20 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CV | Timofey Kondrashin</title>
     <meta name="description"
-        content="CV of Timofey Kondrashin — DevOps Engineer. Experience with Kubernetes, Terraform, CI/CD, and cloud infrastructure.">
+        content="Curriculum Vitae of Timofey Kondrashin — DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
     <meta name="theme-color" content="#000000">
     <meta name="color-scheme" content="dark">
 
     <link rel="canonical" href="https://cv.cosmdandy.dev/">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
 
     <meta property="og:title" content="CV | Timofey Kondrashin">
-    <meta property="og:description" content="DevOps Engineer — Kubernetes, Terraform, CI/CD, cloud infrastructure.">
+    <meta property="og:description" content="Curriculum Vitae of Timofey Kondrashin — DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
     <meta property="og:type" content="profile">
     <meta property="og:url" content="https://cv.cosmdandy.dev/">
+    <meta property="og:image" content="https://cv.cosmdandy.dev/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Timofey Kondrashin · DevOps Engineer · Curriculum Vitae">
 
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="CV | Timofey Kondrashin">
-    <meta name="twitter:description" content="DevOps Engineer — Kubernetes, Terraform, CI/CD, cloud infrastructure.">
+    <meta name="twitter:description" content="Curriculum Vitae of Timofey Kondrashin — DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
+    <meta name="twitter:image" content="https://cv.cosmdandy.dev/og.png">
 
     <script type="application/ld+json">
     {
@@ -28,6 +36,7 @@
         "name": "Timofey Kondrashin",
         "jobTitle": "DevOps Engineer",
         "url": "https://cv.cosmdandy.dev/",
+        "email": "i@cosmdandy.dev",
         "sameAs": [
             "https://github.com/CosmDandy",
             "https://www.linkedin.com/in/cosmdandy",
@@ -46,7 +55,6 @@
         @font-face {
             font-family: 'Inter';
             font-weight: 400;
-            font-style: normal;
             font-display: block;
             src: url('fonts/Inter-Regular.woff2') format('woff2');
         }
@@ -54,7 +62,6 @@
         @font-face {
             font-family: 'Inter';
             font-weight: 600;
-            font-style: normal;
             font-display: block;
             src: url('fonts/Inter-SemiBold.woff2') format('woff2');
         }
@@ -78,7 +85,6 @@
             --fg: #ededed;
             --fg-muted: #839496;
             --fg-dim: #586e75;
-            --fg-faint: #073642;
         }
 
         * {
@@ -112,7 +118,7 @@
         .dot-bg {
             position: fixed;
             inset: 0;
-            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.25) 1px, transparent 1px);
+            background-image: radial-gradient(circle, rgba(147, 161, 161, 0.25) 1px, transparent 1px);
             background-size: 24px 24px;
             pointer-events: none;
             z-index: 1;
@@ -153,7 +159,7 @@
         .header-left h1 {
             font-size: 1.4rem;
             font-weight: 600;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.025em;
             margin-bottom: 4px;
             color: var(--fg);
         }
@@ -303,16 +309,10 @@
         }
 
         .btn-download {
+            position: relative;
             padding: 8px 16px;
             border-radius: 10px;
-            background: linear-gradient(110deg,
-                    var(--fg) 0%,
-                    #ffffff 25%,
-                    var(--fg) 50%,
-                    #ffffff 75%,
-                    var(--fg) 100%);
-            background-size: 200% 100%;
-            background-position: 200% 0;
+            background: var(--fg);
             color: #000;
             border: none;
             font-family: inherit;
@@ -320,15 +320,33 @@
             font-weight: 500;
             cursor: pointer;
             text-decoration: none;
+            overflow: hidden;
+            isolation: isolate;
             transform: translateZ(0);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            animation:
-                popIn 0.6s cubic-bezier(0.32, 0.72, 0, 1) 360ms backwards,
-                badgeShimmer 3.5s ease-in-out infinite;
+            animation: popIn 0.6s cubic-bezier(0.32, 0.72, 0, 1) 360ms backwards;
             transition:
                 transform 0.44s cubic-bezier(0.34, 1.56, 0.64, 1),
                 filter 0.44s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-download::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg,
+                    rgba(255, 50, 100, 0)    0%,
+                    rgba(255, 50, 100, 0.35) 20%,
+                    rgba(120, 40, 220, 0.35) 50%,
+                    rgba(0, 220, 255, 0.35)  80%,
+                    rgba(0, 220, 255, 0)     100%);
+            background-size: 200% 100%;
+            background-position: 200% 0;
+            mix-blend-mode: multiply;
+            animation: badgeShimmer 4.5s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
         }
 
         .btn-download:hover {
@@ -349,7 +367,7 @@
             position: relative;
             max-width: 1000px;
             width: 100%;
-            transition: max-width 0.48s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: max-width 0.18s linear;
             animation: fadeUp 0.6s cubic-bezier(0.32, 0.72, 0, 1) 420ms backwards;
         }
 
@@ -392,7 +410,7 @@
             align-items: center;
             gap: 4px;
             padding: 32px 16px;
-            color: var(--fg-faint);
+            color: var(--fg-dim);
             font-size: 0.8rem;
             transform: translateZ(0);
             -webkit-font-smoothing: antialiased;
@@ -401,13 +419,13 @@
         }
 
         .footer a {
-            color: var(--fg-faint);
+            color: var(--fg-dim);
             text-decoration: none;
             transition: color 0.44s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .footer a:hover {
-            color: var(--fg-dim);
+            color: var(--fg-muted);
         }
 
         /* Loading — reserve space matching A4 aspect ratio */
@@ -527,8 +545,8 @@
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.001ms !important;
             }
-            .btn-download { background: #fdfdfd; animation: none; }
-            .cursor-glow  { display: none; }
+            .btn-download::before { display: none; }
+            .cursor-glow         { display: none; }
         }
     </style>
 </head>
