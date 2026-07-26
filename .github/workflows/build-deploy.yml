@@ -1,22 +1,24 @@
 name: Build and Deploy CV
 
+# Триггера workflow_run здесь больше нет. Он запускал сборку CV в контексте
+# базового репозитория — с секретами и записывающим токеном — по факту
+# завершения другого workflow, и это классический способ получить исполнение
+# чужого кода с правами прода. Плюс он потерял смысл: контейнер ниже запиннен
+# по digest, так что пересборка образа сама по себе ничего в CV не меняет.
+# Новый образ подхватывается коммитом, который меняет digest в этом файле —
+# такой коммит и так попадает под push-триггер.
 on:
   push:
     branches: [main, master]
     paths-ignore: [Dockerfile, texlive.profile, .dockerignore]
-  workflow_run:
-    workflows: ["Build Docker Image"]
-    types: [completed]
-    branches: [main, master]
   schedule:
     - cron: "0 0 1 * *"
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: read
-  pages: write
-  id-token: write
+# Пусто на уровне workflow — каждая job запрашивает права явно и минимально.
+# pages: write и id-token: write нужны только деплою, а не сборке, которая
+# исполняет код из репозитория и внешние бинарники texlive.
+permissions: {}
 
 concurrency:
   group: pages
@@ -25,9 +27,15 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read # checkout
+      packages: read # pull образа из GHCR
     container:
-      image: ghcr.io/cosmdandy/cv-texlive:latest
+      # Пин по digest, а не по :latest: тег в реестре подвижен, и подменённый
+      # образ выполнял бы произвольный код с секретами этой job.
+      # Обновление: пересобрать образ через docker-image.yml и подставить сюда
+      # digest, который тот workflow печатает в summary.
+      image: ghcr.io/cosmdandy/cv-texlive@sha256:309e0e1214e8f7a7153e29f5eef484f549058f18b49ceafe73cb422dbe5bf5e9 # :latest на 2026-07-26
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -36,7 +44,11 @@ jobs:
       CV_LANG_RU: ${{ vars.CV_LANG_RU || 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # checkout по умолчанию оставляет токен в .git/config, откуда его
+          # прочитает любой следующий шаг. Git-операций после клона тут нет.
+          persist-credentials: false
 
       - name: Determine enabled languages
         id: langs
@@ -48,35 +60,46 @@ jobs:
           echo "list=$LANGS" >> "$GITHUB_OUTPUT"
           echo "Enabled languages: $LANGS"
 
+      # Дальше везде значения приходят через env, а не подстановкой ${{ }} в
+      # тело скрипта: подстановка склеивается в текст скрипта до запуска shell,
+      # поэтому кавычка или `$(...)` внутри значения станет кодом.
       - name: Inject CV data
+        env:
+          CV_DATA: ${{ secrets.CV_DATA }}
         run: |
-          if [ -z "${{ secrets.CV_DATA }}" ]; then
+          if [ -z "$CV_DATA" ]; then
             echo "::warning::CV_DATA secret is empty, using example data"
             cp cv-data.example.yaml cv-data.yaml
           else
-            echo "${{ secrets.CV_DATA }}" | base64 -d > cv-data.yaml
+            printf '%s' "$CV_DATA" | base64 -d > cv-data.yaml
           fi
 
       - name: Validate CV data
         run: python3 -c "import yaml; d=yaml.safe_load(open('cv-data.yaml')); assert d, 'cv-data.yaml is empty'; print('OK:', len(d), 'top-level keys')"
 
       - name: Generate LaTeX
+        env:
+          LANGS: ${{ steps.langs.outputs.list }}
         run: |
-          python3 scripts/build.py --data cv-data.yaml --lang ${{ steps.langs.outputs.list }} --output output/
-          python3 scripts/build.py --data cv-data.yaml --lang ${{ steps.langs.outputs.list }} --output output/ --template ats
+          python3 scripts/build.py --data cv-data.yaml --lang "$LANGS" --output output/
+          python3 scripts/build.py --data cv-data.yaml --lang "$LANGS" --output output/ --template ats
 
       - name: Compile LaTeX to PDF
+        env:
+          LANGS: ${{ steps.langs.outputs.list }}
+        working-directory: output
         run: |
-          cd output/
-          for lang in $(echo "${{ steps.langs.outputs.list }}" | tr ',' ' '); do
+          for lang in $(echo "$LANGS" | tr ',' ' '); do
             latexmk -xelatex -interaction=nonstopmode "CV-Timofey-Kondrashin-${lang}.tex"
             latexmk -xelatex -interaction=nonstopmode "CV-Timofey-Kondrashin-ats-${lang}.tex"
           done
 
       - name: Convert PDF to WebP
+        env:
+          LANGS: ${{ steps.langs.outputs.list }}
+        working-directory: output
         run: |
-          cd output/
-          for lang in $(echo "${{ steps.langs.outputs.list }}" | tr ',' ' '); do
+          for lang in $(echo "$LANGS" | tr ',' ' '); do
             pdftoppm -r 300 -png "CV-Timofey-Kondrashin-${lang}.pdf" "page-${lang}"
             for f in page-${lang}-*.png; do
               page_num=$(echo "$f" | grep -o '[0-9]*\.png' | grep -o '[0-9]*')
@@ -87,30 +110,36 @@ jobs:
           done
 
       - name: Upload PDF artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cv-pdfs
           path: output/CV-Timofey-Kondrashin-*.pdf
           retention-days: 7
 
       - name: Prepare Pages content
+        env:
+          LANGS: ${{ steps.langs.outputs.list }}
         run: |
           mkdir -p _site/fonts
-          for lang in $(echo "${{ steps.langs.outputs.list }}" | tr ',' ' '); do
+          for lang in $(echo "$LANGS" | tr ',' ' '); do
             cp "output/CV-Timofey-Kondrashin-${lang}.pdf" _site/
           done
           cp output/cv-*.webp _site/
-          python3 scripts/build_pages.py --langs ${{ steps.langs.outputs.list }} --input pages/index.html --output _site/index.html
+          python3 scripts/build_pages.py --langs "$LANGS" --input pages/index.html --output _site/index.html
           cp pages/fonts/*.woff2 _site/fonts/
           find pages -maxdepth 1 -type f ! -name 'index.html' -exec cp {} _site/ \;
           cp CNAME _site/
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write # публикация артефакта в Pages
+      id-token: write # OIDC-токен, которым deploy-pages подтверждает источник
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment:
       name: github-pages
@@ -118,4 +147,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

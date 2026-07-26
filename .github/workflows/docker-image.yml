@@ -6,27 +6,50 @@ on:
     paths: [Dockerfile]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: write
+# Пусто на уровне workflow — job запрашивает права явно и минимально.
+permissions: {}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # checkout
+      packages: write # push образа в GHCR
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # checkout по умолчанию оставляет токен в .git/config. Он попал бы в
+          # build context и осел в слоях образа. Git после клона тут не нужен.
+          persist-credentials: false
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           push: true
           tags: ghcr.io/cosmdandy/cv-texlive:latest
+
+      # build-deploy.yml тянет образ по digest, а не по :latest. Печатаем digest
+      # сюда, чтобы после пересборки его было откуда скопировать в пин.
+      - name: Digest для пина в build-deploy.yml
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            echo "### Образ собран"
+            echo
+            echo '```'
+            echo "ghcr.io/cosmdandy/cv-texlive@${DIGEST}"
+            echo '```'
+            echo
+            echo "Подставь этот digest в \`.github/workflows/build-deploy.yml\` (jobs.build.container.image)."
+          } >> "$GITHUB_STEP_SUMMARY"
