@@ -36,7 +36,7 @@ jobs:
       CV_LANG_RU: ${{ vars.CV_LANG_RU || 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Determine enabled languages
         id: langs
@@ -87,7 +87,7 @@ jobs:
           done
 
       - name: Upload PDF artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cv-pdfs
           path: output/CV-Timofey-Kondrashin-*.pdf
@@ -106,7 +106,7 @@ jobs:
           cp CNAME _site/
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
 
   deploy:
     needs: build
@@ -118,4 +118,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
