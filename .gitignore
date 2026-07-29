@@ -352,3 +352,6 @@ logs/
 .Trashes
 Thumbs.db
 ehthumbs.db
+
+# Сборка для деплоя
+_site/

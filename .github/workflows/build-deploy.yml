@@ -16,13 +16,16 @@ on:
   workflow_dispatch:
 
 # Пусто на уровне workflow — каждая job запрашивает права явно и минимально.
-# pages: write и id-token: write нужны только деплою, а не сборке, которая
-# исполняет код из репозитория и внешние бинарники texlive.
+# Сборке хватает contents: read, а токен Cloudflare живёт только в деплое,
+# который ничего не собирает: сборка исполняет код из репозитория и внешние
+# бинарники texlive, и доступ к воркерам ей не нужен.
 permissions: {}
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  # Не отменяем на лету: прерванный деплой оставит воркер в промежуточном
+  # состоянии, а сборка PDF занимает минуты — очередь дешевле поломки.
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -116,7 +119,9 @@ jobs:
           path: output/CV-Timofey-Kondrashin-*.pdf
           retention-days: 7
 
-      - name: Prepare Pages content
+      # CNAME сюда больше не копируется: он нужен был GitHub Pages, а на
+      # Cloudflare домен привязан к воркеру в дашборде.
+      - name: Prepare site content
         env:
           LANGS: ${{ steps.langs.outputs.list }}
         run: |
@@ -128,23 +133,57 @@ jobs:
           python3 scripts/build_pages.py --langs "$LANGS" --input pages/index.html --output _site/index.html
           cp pages/fonts/*.woff2 _site/fonts/
           find pages -maxdepth 1 -type f ! -name 'index.html' -exec cp {} _site/ \;
-          cp CNAME _site/
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+      # Обычный артефакт вместо upload-pages-artifact: тот пакует в формат,
+      # который умеет разворачивать только deploy-pages.
+      - name: Upload site artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: site
+          path: _site/
+          retention-days: 7
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: write # публикация артефакта в Pages
-      id-token: write # OIDC-токен, которым deploy-pages подтверждает источник
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: production
+      url: https://cv.cosmdandy.dev
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Нужен только wrangler.jsonc, история не требуется.
+          persist-credentials: false
+
+      - name: Download site artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: site
+          path: _site/
+
+      # Секреты нельзя проверить в if: — контекст secrets там недоступен.
+      # Без этого шага отсутствие токена выглядит как невнятная ошибка внутри
+      # wrangler, и непонятно, сломался деплой или не настроен доступ.
+      - name: Проверка доступа к Cloudflare
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          missing=""
+          [ -z "$TOKEN" ] && missing="CLOUDFLARE_API_TOKEN"
+          [ -z "$ACCOUNT" ] && missing="${missing:+$missing, }CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Не задано: $missing. Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
