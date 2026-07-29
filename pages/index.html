@@ -10,11 +10,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
         // До отрисовки, иначе на долю секунды мелькнёт не та тема.
+        // Пустое хранилище означает «следуй за системой», поэтому пишем сюда
+        // только то, что пользователь выбрал руками.
         (function () {
-            var t = 'auto';
-            try { t = localStorage.getItem('theme') || 'auto'; } catch (e) {}
-            if (['auto', 'light', 'dark'].indexOf(t) === -1) t = 'auto';
-            document.documentElement.setAttribute('data-theme', t);
+            var saved = null;
+            try { saved = localStorage.getItem('theme'); } catch (e) {}
+            if (saved !== 'light' && saved !== 'dark') saved = null;
+            var system = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', saved || system);
         })();
     </script>
     <title>CV | cosmdandy — Timofey Kondrashin</title>
@@ -104,6 +107,10 @@
            Свечение под превью в обеих темах одинаковое. */
         :root,
         :root[data-theme="dark"] {
+            /* Длительность перекраски при смене темы — одна на весь файл,
+               иначе фон, текст и рамки приезжают вразнобой. */
+            --theme-fade: 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+
             --fg: #ededed;
             --fg-muted: #839496;
             --fg-dim: #586e75;
@@ -179,7 +186,7 @@
         }
 
         @media (prefers-color-scheme: light) {
-            :root[data-theme="auto"] {
+            :root:not([data-theme]) {
                 --fg: #073642;       /* base02 */
                 --fg-muted: #657b83; /* base00 */
                 --fg-dim: #93a1a1;   /* base1  */
@@ -486,11 +493,11 @@
 
 
         /* ── Переключатель темы ───────────────────────────────────────────
-           Звезда из фавикона на контрастной плашке. Три положения по кругу:
-           auto → light → dark, каждое — поворот на 120°. В auto звезда
-           приглушена, чтобы явный выбор читался как решение, а не как
-           случайность. Живёт в панели управления: угол экрана здесь занят
-           ссылками шапки. */
+           Два состояния, солнце и луна. Отдельного «авто» в интерфейсе нет:
+           пустой localStorage сам означает «следуй за системой», а первый
+           клик записывает явный выбор.
+
+           Живёт в панели управления: угол экрана занят ссылками шапки. */
         .theme-switch {
             display: grid;
             place-items: center;
@@ -505,32 +512,61 @@
             -webkit-tap-highlight-color: transparent;
             animation: popIn 0.6s cubic-bezier(0.32, 0.72, 0, 1) 330ms backwards;
             transition:
-                background   0.5s ease,
-                border-color 0.5s ease,
-                box-shadow   0.5s ease,
+                background   var(--theme-fade),
+                border-color var(--theme-fade),
+                box-shadow   var(--theme-fade),
                 transform    0.44s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .theme-switch:hover { transform: translate3d(0, -1px, 0); }
         .theme-switch:active { transform: translate3d(0, 0, 0) scale(0.96); }
 
-        .theme-switch svg { width: 20px; height: 20px; display: block; }
-        .theme-switch .ray { stroke: var(--inv-ray); transition: stroke 0.5s ease; }
-        .theme-switch .node { fill: var(--inv-node); transition: fill 0.5s ease; }
-
-        .theme-switch .star {
-            transform-origin: 12px 12px;
+        /* Иконки лежат друг на друге: одна уезжает, вторая приезжает. */
+        .theme-switch svg {
+            grid-area: 1 / 1;
+            width: 18px;
+            height: 18px;
+            display: block;
+            color: var(--inv-node);
             transition:
-                transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
-                opacity   0.4s ease;
+                opacity   0.35s ease,
+                transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+                color     var(--theme-fade);
         }
 
-        :root[data-theme="auto"]  .theme-switch .star { transform: rotate(0deg);   opacity: 0.4; }
-        :root[data-theme="light"] .theme-switch .star { transform: rotate(120deg); opacity: 1; }
-        :root[data-theme="dark"]  .theme-switch .star { transform: rotate(240deg); opacity: 1; }
+        .icon-sun  { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+        .icon-moon { opacity: 0; transform: rotate(90deg)  scale(0.5); }
+
+        :root[data-theme="light"] .icon-sun,
+        :root:not([data-theme]) .icon-sun { opacity: 1; transform: rotate(0deg) scale(1); }
+
+        :root[data-theme="dark"] .icon-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+        :root[data-theme="dark"] .icon-sun { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme]) .icon-sun { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+            :root:not([data-theme]) .icon-moon { opacity: 1; transform: rotate(0deg) scale(1); }
+        }
 
         @media (prefers-reduced-motion: reduce) {
             .theme-switch { animation: none; }
+        }
+
+        /* ── Плавная смена темы ───────────────────────────────────────────
+           Переходы навешиваются только на время переключения: постоянные
+           перебили бы собственные анимации панели и подсветку кнопок. */
+        :root.theme-animating,
+        :root.theme-animating *,
+        :root.theme-animating *::before,
+        :root.theme-animating *::after {
+            transition:
+                background-color var(--theme-fade),
+                background-image var(--theme-fade),
+                color            var(--theme-fade),
+                border-color     var(--theme-fade),
+                box-shadow       var(--theme-fade),
+                fill             var(--theme-fade),
+                stroke           var(--theme-fade) !important;
         }
 
         /* PDF Viewer */
@@ -783,29 +819,15 @@
             <a class="btn-download" id="download-btn" href="CV-Timofey-Kondrashin-en.pdf" download>Download PDF</a>
             <div class="controls-divider"></div>
             <button class="theme-switch" id="theme-switch" type="button"
-                    aria-label="Тема: по системе" title="Тема: по системе">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <defs>
-                        <linearGradient id="themeStarGrad" x1="22%" y1="100%" x2="78%" y2="0%">
-                            <stop offset="0%" stop-color="#ee5c80"/>
-                            <stop offset="25%" stop-color="#ee76a8"/>
-                            <stop offset="50%" stop-color="#9452cd"/>
-                            <stop offset="75%" stop-color="#34cdeb"/>
-                            <stop offset="100%" stop-color="#32eeeb"/>
-                        </linearGradient>
-                    </defs>
-                    <g class="ray" stroke-width="0.9" fill="none">
-                        <line x1="12" y1="12" x2="12" y2="4"/><line x1="12" y1="12" x2="18.9" y2="8"/>
-                        <line x1="12" y1="12" x2="18.9" y2="16"/><line x1="12" y1="12" x2="12" y2="20"/>
-                        <line x1="12" y1="12" x2="5.1" y2="16"/><line x1="12" y1="12" x2="5.1" y2="8"/>
-                    </g>
-                    <g class="node">
-                        <circle cx="12" cy="4" r="1.25"/><circle cx="18.9" cy="8" r="1.25"/>
-                        <circle cx="18.9" cy="16" r="1.25"/><circle cx="12" cy="20" r="1.25"/>
-                        <circle cx="5.1" cy="16" r="1.25"/><circle cx="5.1" cy="8" r="1.25"/>
-                    </g>
-                    <path class="star" fill="url(#themeStarGrad)"
-                          d="M12 6.6 C12.45 10.15 13.85 11.55 17.4 12 C13.85 12.45 12.45 13.85 12 17.4 C11.55 13.85 10.15 12.45 6.6 12 C10.15 11.55 11.45 10.15 12 6.6 Z"/>
+                    aria-label="Сменить тему" title="Сменить тему">
+                <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4.2"/>
+                    <path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M6.5 6.5 4.9 4.9M19.1 19.1l-1.6-1.6M17.5 6.5l1.6-1.6M4.9 19.1l1.6-1.6"/>
+                </svg>
+                <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5a8.6 8.6 0 1 0 10.7 10.7Z"/>
                 </svg>
             </button>
         </div>
@@ -900,26 +922,52 @@
         }
         animateCursor();
 
-        // Переключатель темы: auto → light → dark по кругу.
-        const THEMES = ['auto', 'light', 'dark'];
-        const THEME_LABELS = { auto: 'по системе', light: 'светлая', dark: 'тёмная' };
-        const themeSwitch = document.getElementById('theme-switch');
+        // Переключатель темы. Два состояния в интерфейсе, три по смыслу: пока
+        // в localStorage пусто, страница следует за системой и реагирует на её
+        // смену на лету.
+        (function () {
+            const btn = document.getElementById('theme-switch');
+            const systemLight = window.matchMedia('(prefers-color-scheme: light)');
+            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        function labelTheme(theme) {
-            const text = 'Тема: ' + THEME_LABELS[theme];
-            themeSwitch.setAttribute('aria-label', text);
-            themeSwitch.setAttribute('title', text);
-        }
+            function saved() {
+                try {
+                    const v = localStorage.getItem('theme');
+                    return v === 'light' || v === 'dark' ? v : null;
+                } catch (e) {
+                    return null;
+                }
+            }
 
-        themeSwitch.addEventListener('click', () => {
-            const now = document.documentElement.getAttribute('data-theme') || 'auto';
-            const next = THEMES[(THEMES.indexOf(now) + 1) % THEMES.length];
-            document.documentElement.setAttribute('data-theme', next);
-            try { localStorage.setItem('theme', next); } catch (e) {}
-            labelTheme(next);
-        });
+            function label(theme) {
+                const text = theme === 'dark' ? 'Тёмная тема, включить светлую'
+                                              : 'Светлая тема, включить тёмную';
+                btn.setAttribute('aria-label', text);
+                btn.setAttribute('title', text);
+            }
 
-        labelTheme(document.documentElement.getAttribute('data-theme') || 'auto');
+            function setTheme(theme, animate) {
+                const root = document.documentElement;
+                if (animate && !reduced) {
+                    root.classList.add('theme-animating');
+                    window.setTimeout(function () { root.classList.remove('theme-animating'); }, 500);
+                }
+                root.setAttribute('data-theme', theme);
+                label(theme);
+            }
+
+            btn.addEventListener('click', function () {
+                const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                try { localStorage.setItem('theme', next); } catch (e) {}
+                setTheme(next, true);
+            });
+
+            systemLight.addEventListener('change', function (e) {
+                if (!saved()) setTheme(e.matches ? 'light' : 'dark', true);
+            });
+
+            label(document.documentElement.getAttribute('data-theme') || 'dark');
+        })();
     </script>
 </body>
 
