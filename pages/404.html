@@ -9,12 +9,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
         // До отрисовки, иначе мелькнёт не та тема. Пустое хранилище означает
-        // «следуй за системой».
+        // «следуй за системой»; ручной выбор живёт несколько часов и снимается,
+        // как только система сама передумала — подробнее в index.html.
         (function () {
-            var saved = null;
-            try { saved = localStorage.getItem('theme'); } catch (e) {}
-            if (saved !== 'light' && saved !== 'dark') saved = null;
+            var LIFE = 4 * 60 * 60 * 1000;
             var system = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            var saved = null;
+            try {
+                if (+localStorage.getItem('theme-at') > Date.now() - LIFE
+                    && localStorage.getItem('theme-sys') === system) {
+                    saved = localStorage.getItem('theme');
+                } else {
+                    localStorage.removeItem('theme');
+                    localStorage.removeItem('theme-at');
+                    localStorage.removeItem('theme-sys');
+                }
+            } catch (e) {}
+            if (saved !== 'light' && saved !== 'dark') saved = null;
             document.documentElement.setAttribute('data-theme', saved || system);
         })();
     </script>
@@ -402,17 +413,29 @@
     </script>
     <script>
         // Два состояния в интерфейсе, три по смыслу: пока выбора нет, идём за
-        // системой и реагируем на её смену на лету.
+        // системой. Это же состояние и основное — ручной выбор из него
+        // временно выводит, а потом всё возвращается само.
         (function () {
             var btn = document.getElementById('theme-switch');
             var systemLight = window.matchMedia('(prefers-color-scheme: light)');
             var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            function saved() {
+            // Выбор запоминаем вместе с обстоятельствами: временем и тем, какая
+            // тема была у системы. По ним скрипт в <head> решает, жив ли он ещё.
+            function remember(theme) {
                 try {
-                    var v = localStorage.getItem('theme');
-                    return v === 'light' || v === 'dark' ? v : null;
-                } catch (e) { return null; }
+                    localStorage.setItem('theme', theme);
+                    localStorage.setItem('theme-at', String(Date.now()));
+                    localStorage.setItem('theme-sys', systemLight.matches ? 'light' : 'dark');
+                } catch (e) {}
+            }
+
+            function forget() {
+                try {
+                    localStorage.removeItem('theme');
+                    localStorage.removeItem('theme-at');
+                    localStorage.removeItem('theme-sys');
+                } catch (e) {}
             }
 
             function label(theme) {
@@ -434,12 +457,14 @@
 
             btn.addEventListener('click', function () {
                 var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                try { localStorage.setItem('theme', next); } catch (e) {}
+                remember(next);
                 setTheme(next, true);
             });
 
+            // Система главнее выбора: сменила тему — выбор снимается.
             systemLight.addEventListener('change', function (e) {
-                if (!saved()) setTheme(e.matches ? 'light' : 'dark', true);
+                forget();
+                setTheme(e.matches ? 'light' : 'dark', true);
             });
 
             label(document.documentElement.getAttribute('data-theme') || 'dark');
