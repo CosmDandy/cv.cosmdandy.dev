@@ -19,6 +19,7 @@ RUN apt-get update -qq && \
     python3 \
     python3-yaml \
     python3-jinja2 \
+    python3-pypdf \
     poppler-utils \
     libwebp-dev \
     webp \
@@ -77,4 +78,4 @@ USER app
 # «пустой» образ после неудачной пересборки не притворится рабочим (DS-0026).
 HEALTHCHECK --interval=5m --timeout=30s --start-period=5s --retries=1 \
     CMD latexmk --version > /dev/null 2>&1 && \
-        python3 -c "import yaml, jinja2" || exit 1
+        python3 -c "import yaml, jinja2, pypdf" || exit 1
