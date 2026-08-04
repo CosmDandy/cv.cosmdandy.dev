@@ -11,6 +11,12 @@ on:
   push:
     branches: [main, master]
     paths-ignore: [Dockerfile, texlive.profile, .dockerignore]
+  # Резюме тоже надо смотреть глазами до выкатки, а не после. На pull request
+  # собирается тот же сайт и уезжает отдельной версией воркера — со своим
+  # адресом и не трогая продакшен. Те же пути пропускаем: правка Dockerfile
+  # сама по себе резюме не меняет, образ пинится по digest.
+  pull_request:
+    paths-ignore: [Dockerfile, texlive.profile, .dockerignore]
   schedule:
     - cron: "0 0 1 * *"
   workflow_dispatch:
@@ -30,6 +36,15 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Ветку из форка не собираем: секретов ей не дают, и это правильно, но без
+    # них сборка не сможет ни забрать образ из GHCR, ни получить данные
+    # резюме — она свалилась бы на первом шаге, а выглядело бы это как поломка
+    # пайплайна. Dependabot исключён отдельно: его PR выглядят внутренними, а
+    # секреты он получает из своего хранилища, не из Actions.
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.actor != 'dependabot[bot]')
     permissions:
       contents: read # checkout
       packages: read # pull образа из GHCR
@@ -38,7 +53,7 @@ jobs:
       # образ выполнял бы произвольный код с секретами этой job.
       # Обновление: пересобрать образ через docker-image.yml и подставить сюда
       # digest, который тот workflow печатает в summary.
-      image: ghcr.io/cosmdandy/cv-texlive@sha256:309e0e1214e8f7a7153e29f5eef484f549058f18b49ceafe73cb422dbe5bf5e9 # :latest на 2026-07-26
+      image: ghcr.io/cosmdandy/cv-texlive@sha256:976d5bd24c62f6067466f2e05978713fa7545567b338ba646276ae7f5698f2b8 # :latest на 2026-08-04, с pypdf
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -130,7 +145,7 @@ jobs:
             cp "output/CV-Timofey-Kondrashin-${lang}.pdf" _site/
           done
           cp output/cv-*.webp _site/
-          python3 scripts/build_pages.py --langs "$LANGS" --input pages/index.html --output _site/index.html
+          python3 scripts/build_pages.py --langs "$LANGS" --input pages/index.html --output _site/index.html --pdf-dir output
           cp pages/fonts/*.woff2 _site/fonts/
           find pages -maxdepth 1 -type f ! -name 'index.html' -exec cp {} _site/ \;
 
@@ -165,6 +180,12 @@ jobs:
           name: site
           path: _site/
 
+      # На продакшене отметки нет — этим он и отличается от стендов. Но просто
+      # не ставить её нельзя: в закоммиченной странице лежит штамп локальной
+      # сборки, и без стирания на продакшен уехало бы «локально».
+      - name: Clear build stamp
+        run: python3 scripts/stamp_build.py _site/index.html _site/404.html --clear
+
       # Секреты нельзя проверить в if: — контекст secrets там недоступен.
       # Без этого шага отсутствие токена выглядит как невнятная ошибка внутри
       # wrangler, и непонятно, сломался деплой или не настроен доступ.
@@ -187,3 +208,82 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+
+  preview:
+    name: preview
+    needs: build
+    # Только для PR из этого же репозитория — по той же причине, что и у
+    # сборки: форку секретов не дают, и загружать версию воркера ему нечем.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Адрес превью пишется комментарием в сам PR. Иначе его пришлось бы
+      # выкапывать из summary прогона, а смотреть на него идут из обсуждения.
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Нужен только wrangler.jsonc, история не требуется.
+          persist-credentials: false
+
+      - name: Download site artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: site
+          path: _site/
+
+      # Отметка о сборке ставится здесь, а не в сборке: артефакт один на оба
+      # стенда, и «где развёрнуто» знает только тот, кто развёртывает.
+      - name: Stamp build
+        env:
+          SHA: ${{ github.event.pull_request.head.sha }}
+          REF: ${{ github.event.pull_request.head.ref }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          python3 scripts/stamp_build.py _site/index.html _site/404.html \
+            --env cloudflare --sha "$SHA" --ref "$REF" --pr "$PR"
+
+      # versions upload, а не deploy: загружается новая версия воркера со своим
+      # адресом, а продакшен продолжает отдавать текущую.
+      - id: upload
+        name: Upload version to Cloudflare
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: versions upload
+
+      - name: Preview link
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          OUTPUT: ${{ steps.upload.outputs.command-output }}
+        run: |
+          # grep без совпадения возвращает единицу, и присваивание уронило бы
+          # шаг: bash здесь запущен с -e.
+          url=$(printf '%s' "$OUTPUT" \
+            | grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' | head -1 || true)
+          if [ -z "$url" ]; then
+            url="адрес не найден в выводе wrangler"
+          fi
+          {
+            echo "### Превью этой версии"
+            echo
+            echo "$url"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Через printf, а не многострочной строкой в кавычках: внутри
+          # YAML-блока вторая строка сохранила бы отступ, а для markdown это
+          # уже блок кода.
+          body=$(printf \
+            'Превью: %s\n\nСобрано из `%s`. Продакшен отдаёт текущую версию.' \
+            "$url" "$SHA")
+          # Правим свой прошлый комментарий, а не плодим новый на каждый push:
+          # в обсуждении должен остаться один адрес — сегодняшний.
+          gh pr comment "$PR" --body "$body" --edit-last \
+            || gh pr comment "$PR" --body "$body"
