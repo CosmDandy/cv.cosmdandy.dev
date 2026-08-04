@@ -130,7 +130,7 @@ jobs:
             cp "output/CV-Timofey-Kondrashin-${lang}.pdf" _site/
           done
           cp output/cv-*.webp _site/
-          python3 scripts/build_pages.py --langs "$LANGS" --input pages/index.html --output _site/index.html
+          python3 scripts/build_pages.py --langs "$LANGS" --input pages/index.html --output _site/index.html --pdf-dir output
           cp pages/fonts/*.woff2 _site/fonts/
           find pages -maxdepth 1 -type f ! -name 'index.html' -exec cp {} _site/ \;
 

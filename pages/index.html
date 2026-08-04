@@ -9,6 +9,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
+        // Светлая тема выключена. Не удалена: палитра, ручной выбор и слежение
+        // за системой на месте и работают — погашена только сама возможность
+        // выбрать, и возвращается она одним true вот здесь. Заодно придётся
+        // вернуть две метки ниже, они помечены.
+        //
+        // Почему выключена: тема гасится на обоих сайтах разом, чтобы визитка и
+        // резюме не разъезжались, — разбор в index.html визитки.
+        var THEME_CHOICE = false;
+
         // До отрисовки, иначе на долю секунды мелькнёт не та тема.
         // Пустое хранилище означает «следуй за системой», поэтому пишем сюда
         // только то, что пользователь выбрал руками.
@@ -17,23 +26,53 @@
             try { saved = localStorage.getItem('theme'); } catch (e) {}
             if (saved !== 'light' && saved !== 'dark') saved = null;
             var system = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', saved || system);
+            // Атрибут ставится всегда, и этого довольно, чтобы светлые правила
+            // не сработали: `:root[data-theme="light"]` не совпадёт, а системное
+            // написано на `:root:not([data-theme])`.
+            document.documentElement.setAttribute('data-theme',
+                THEME_CHOICE ? (saved || system) : 'dark');
+            if (!THEME_CHOICE) document.documentElement.classList.add('theme-locked');
         })();
+
+        // Пришли переездом с визитки. Занавес поднят с самого первого кадра:
+        // страница собирается за ним и выходит уже готовой. Ставить его
+        // отсюда обязательно — узел в теле появился бы позже первой отрисовки,
+        // а псевдоэлемент корня существует ровно с этой строки.
+        //
+        // Заодно прячем строку до того, как её посчитают: скрипт переезда
+        // стоит ниже, у самой шапки, и браузер успевает отрисовать кадр
+        // раньше.
+        if (/[?&]vt=/.test(location.search)) {
+            document.documentElement.classList.add('vt-pending', 'vt-veil', 'vt-shut');
+        }
     </script>
-    <title>CV | cosmdandy — Timofey Kondrashin</title>
+    <!-- Разделитель везде один — точка на средней линии (·). Полоски («|», «—»)
+         в карточке мессенджера читаются как обрыв строки, точка — как пауза.
+         «CV» капсом: это аббревиатура Curriculum Vitae, строчными она стала бы
+         похожа на опечатку. Ник cosmdandy из заголовка и описания убран — он
+         остаётся в alternateName и og:image:alt. -->
+    <title>CV · Timofey Kondrashin</title>
     <meta name="description"
-        content="Curriculum Vitae of Timofey Kondrashin (cosmdandy) — DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#fdf6e3" media="(prefers-color-scheme: light)">
-    <meta name="color-scheme" content="dark light">
+        content="Curriculum Vitae of Timofey Kondrashin · DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
+    <!-- Пока светлая выключена, полоса браузера тоже держится тёмной: её
+         выбирает система, а не наша тема. Светлые значения возвращаются
+         вместе с темой:
+             <meta name="theme-color" content="#fdf6e3" media="(prefers-color-scheme: light)">
+             <meta name="color-scheme" content="dark light"> -->
+    <meta name="theme-color" content="#000000">
+    <meta name="color-scheme" content="dark">
+    <!-- Отметка о сборке: какой стенд, из чего собран и когда развёрнут.
+         Значение ставит тот пайплайн, который развёртывает (tools/stamp_build.py),
+         локально — sync.sh. Здесь стоит то, что видно, если не ставил никто. -->
+    <meta name="build" content="env=local">
 
     <link rel="canonical" href="https://cv.cosmdandy.dev/">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="manifest" href="site.webmanifest">
 
-    <meta property="og:title" content="CV | cosmdandy — Timofey Kondrashin">
-    <meta property="og:description" content="Curriculum Vitae of Timofey Kondrashin (cosmdandy) — DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
+    <meta property="og:title" content="CV · Timofey Kondrashin">
+    <meta property="og:description" content="Curriculum Vitae of Timofey Kondrashin · DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
     <meta property="og:type" content="profile">
     <meta property="og:url" content="https://cv.cosmdandy.dev/">
     <meta property="og:image" content="https://cv.cosmdandy.dev/og.png">
@@ -42,8 +81,8 @@
     <meta property="og:image:alt" content="cosmdandy · Timofey Kondrashin · DevOps Engineer · Curriculum Vitae">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="CV | cosmdandy — Timofey Kondrashin">
-    <meta name="twitter:description" content="Curriculum Vitae of Timofey Kondrashin (cosmdandy) — DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
+    <meta name="twitter:title" content="CV · Timofey Kondrashin">
+    <meta name="twitter:description" content="Curriculum Vitae of Timofey Kondrashin · DevOps Engineer with experience in Kubernetes, Terraform, CI/CD, and cloud infrastructure. EN/RU PDF.">
     <meta name="twitter:image" content="https://cv.cosmdandy.dev/og.png">
 
     <script type="application/ld+json">
@@ -66,22 +105,31 @@
 
     <link rel="preload" href="fonts/Inter-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="fonts/Inter-SemiBold.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="cv-en-1.webp" as="image" type="image/webp">
+    <!-- Предзагрузка обязана знать про srcset: без imagesrcset браузер тянет
+         именно href, то есть полноразмерные 592 КБ, и весь смысл srcset ниже
+         пропадает — картинка приезжает дважды или не та. -->
+    <link rel="preload" as="image" type="image/webp"
+          href="cv-en-1-sm.webp"
+          imagesrcset="cv-en-1-sm.webp 1240w, cv-en-1.webp 2480w"
+          imagesizes="(max-width: 640px) 100vw, 1000px">
     <!-- LANG:ru:start -->
-    <link rel="prefetch" href="cv-ru-1.webp" as="image" type="image/webp">
+    <link rel="prefetch" href="cv-ru-1-sm.webp" as="image" type="image/webp">
     <!-- LANG:ru:end -->
     <style>
+        /* swap, а не block: block прячет текст до приезда шрифта, и на медленном
+           мобильном соединении это ровно те сотни миллисекунд, когда экран уже
+           свёрстан, но пуст. Шрифты в preload, так что подмена держится недолго. */
         @font-face {
             font-family: 'Inter';
             font-weight: 400;
-            font-display: block;
+            font-display: swap;
             src: url('fonts/Inter-Regular.woff2') format('woff2');
         }
 
         @font-face {
             font-family: 'Inter';
             font-weight: 600;
-            font-display: block;
+            font-display: swap;
             src: url('fonts/Inter-SemiBold.woff2') format('woff2');
         }
 
@@ -130,6 +178,17 @@
             --img-line:     rgba(255, 255, 255, 0.10);
             --img-line-top: rgba(255, 255, 255, 0.20);
             --img-glow: rgba(255, 255, 255, 0.06);
+
+            /* Подсветка ссылки под курсором. Лист резюме белый в обеих темах,
+               поэтому цвет тут один — голубой из общей палитры. */
+            --link-mark: rgba(38, 139, 210, 0.16);
+
+            /* Плашка с адресом у курсора. Плотный фон, а не стекло: она
+               всплывает и над тёмным полем, и над белым листом резюме. */
+            --hint-bg:   rgba(6, 22, 27, 0.92);
+            --hint-line: rgba(147, 161, 161, 0.22);
+            --hint-fg:   rgba(238, 232, 213, 0.92);
+            --hint-dim:  rgba(147, 161, 161, 0.55);
 
             --cursor-glow-1: rgba(237, 237, 237, 0.035);
             --cursor-glow-2: rgba(237, 237, 237, 0.013);
@@ -337,10 +396,16 @@
         .links a:nth-child(1) { animation: fadeUp 0.6s cubic-bezier(0.32, 0.72, 0, 1) 60ms backwards; }
         .links a:nth-child(2) { animation: fadeUp 0.6s cubic-bezier(0.32, 0.72, 0, 1) 120ms backwards; }
         .links a:nth-child(3) { animation: fadeUp 0.6s cubic-bezier(0.32, 0.72, 0, 1) 180ms backwards; }
+        .links a:nth-child(4) { animation: fadeUp 0.6s cubic-bezier(0.32, 0.72, 0, 1) 240ms backwards; }
 
+        /* Размер один на все четыре — но чтобы он и выглядел одним, у каждой
+           иконки viewBox обрезан по самой фигуре. Иначе «поле» внутри бокса
+           врёт: при формально равной ширине круг GitHub выходил мельче круга
+           Telegram, а RSS торчал выше соседей. После обрезки площадь заливки
+           сходится (43.6 / 43.8 / 44.8 %), и ряд ровный без исключений. */
         .links a svg {
-            width: 16px;
-            height: 16px;
+            width: 16.5px;
+            height: 16.5px;
         }
 
         /* Controls bar */
@@ -499,6 +564,42 @@
            клик записывает явный выбор.
 
            Живёт в панели управления: угол экрана занят ссылками шапки. */
+        /* Пока светлая тема выключена (THEME_CHOICE в скрипте страницы), кнопки
+           нет: переключатель, который ничего не переключает, хуже
+           отсутствующего. Класс ставит тот же скрипт. Вместе с кнопкой уходит
+           и её разделитель — иначе он торчит справа от «Download PDF»
+           чертой, за которой ничего нет. */
+        :root.theme-locked .theme-switch,
+        :root.theme-locked .theme-divider { display: none; }
+
+        /* ── Отметка о сборке ───────────────────────────────────────────────────────
+           Какой стенд, из чего собран и когда развёрнут. Стоит в углу и приглушена:
+           это инструмент для того, кто правит сайт, а не часть страницы. Под курсором
+           проявляется — читать её всё-таки иногда надо.
+
+           На продакшене её не рисуют вовсе (см. скрипт в странице), поэтому правил
+           «спрятать» здесь нет: нечего прятать. */
+        .build-badge {
+            position: fixed;
+            left: 14px;
+            bottom: 12px;
+            z-index: 5;
+            font-family: ui-monospace, "SF Mono", Menlo, monospace;
+            font-size: 0.68rem;
+            letter-spacing: 0.02em;
+            color: var(--meta);
+            opacity: 0.5;
+            transition: opacity 0.25s ease;
+        }
+        .build-badge:hover { opacity: 1; }
+        .build-badge a {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            text-decoration-thickness: 1px;
+        }
+        .build-badge a:hover { color: var(--heading); }
+
         .theme-switch {
             display: grid;
             place-items: center;
@@ -604,9 +705,16 @@
             animation: none;
         }
 
-        #pdf-container img {
+        /* Лист резюме. Отступ переехал сюда с картинки: слой ссылок считает
+           проценты от высоты этой коробки, и лишние 16 пикселей внизу сдвинули
+           бы каждую ссылку вверх. */
+        .sheet {
             position: relative;
             z-index: 1;
+            margin-bottom: 16px;
+        }
+
+        #pdf-container img {
             display: block;
             width: 100%;
             height: auto;
@@ -616,7 +724,155 @@
             box-shadow:
                 0 0 0 1px var(--surface-soft),
                 0 0 80px -20px var(--img-glow);
-            margin-bottom: 16px;
+        }
+
+        /* ── Слой ссылок ──────────────────────────────────────────────────
+           Превью — растр, и ссылки, ради которых резюме и раздают в PDF, на
+           нём мертвы. Поверх картинки лежат прозрачные <a> по координатам из
+           самих link-аннотаций документа; координаты в процентах, поэтому при
+           зуме и на узком экране они едут вместе с листом.
+
+           В покое слоя не видно: резюме и так набрано так, что ссылки в нём
+           различимы. Подсветка появляется только под курсором — она говорит
+           «сюда можно нажать», а не размечает страницу заранее. */
+        .pdf-link {
+            position: absolute;
+            border-radius: 2px;
+            -webkit-tap-highlight-color: transparent;
+            transition:
+                background-color 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+                box-shadow 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        .pdf-link:hover,
+        .pdf-link:focus-visible {
+            background: var(--link-mark);
+            box-shadow: 0 0 0 3px var(--link-mark);
+        }
+
+        /* ── Адрес под курсором ───────────────────────────────────────────
+           Куда ведёт ссылка, видно до клика: браузер пишет это мелким шрифтом
+           в углу окна, а здесь адрес идёт за курсором. Для слоя поверх резюме
+           это не украшение, а единственный способ узнать адрес — сама ссылка
+           там невидима.
+
+           Плашка одна на обе темы и намеренно тёмная: на светлой она читается
+           как отдельный предмет, ровно как кнопка переключателя. */
+        .link-hint {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 20;
+            padding: 7px 11px;
+            border-radius: 9px;
+            border: 1px solid var(--hint-line);
+            background: var(--hint-bg);
+            backdrop-filter: blur(6px);
+            color: var(--hint-fg);
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+            font-size: 0.76rem;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate3d(0, 6px, 0) scale(0.97);
+            transition:
+                opacity 0.22s ease,
+                transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .link-hint.on {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        /* Схема глуше самого адреса: она одинаковая у всех ссылок и нужна
+           только как признак «это адрес». Сам адрес — одним цветом. */
+        .link-hint .lh-scheme { color: var(--hint-dim); }
+
+        /* ── Переход на визитку ───────────────────────────────────────────
+           Имя и должность на обоих сайтах набраны одним кеглем, только здесь
+           стоят в углу, а на визитке — посреди карточки. Поэтому переход
+           показан как переезд самой строки: страница вокруг неё гаснет, а
+           встречает её уже визитка и довозит на место.
+
+           Нативным cross-document переходом этого не сделать: он работает
+           только внутри одного origin, а cv.cosmdandy.dev и cosmdandy.dev —
+           разные хосты. Отсюда ручная передача координат через адрес.
+
+           Фон у обоих сайтов один и тот же чёрный, поэтому стык между
+           документами не мигает — на этом вся иллюзия и держится. */
+
+        /* Пришли переездом: страница уже собрана, и своё появление ей играть
+           не нужно — это читалось бы как «анимация во второй раз». Заглушка
+           не снимается до конца жизни документа, и это важно: стоит её снять,
+           браузер считает анимацию назначенной заново и честно проигрывает с
+           нуля. Именно так строка «currently building…» на визитке пропадала
+           в момент клика и заново выплывала посреди отъезда. */
+        :root.vt-in .links,
+        :root.vt-in .controls,
+        /* И всё, что в панели: кнопки языков, зум, «Download PDF» и
+           переключатель темы выезжают каждый со своей задержкой, и хвост
+           этого выезда торчал бы из-под тающего занавеса. Мерцание кнопки
+           живёт на ::before и остаётся нетронутым. */
+        :root.vt-in .controls *,
+        :root.vt-in .viewer,
+        :root.vt-in .footer,
+        :root.vt-in .header-left h1,
+        :root.vt-in .header-left .subtitle {
+            animation: none;
+        }
+
+        /* Уход. Гасим плавно, а не visibility: мгновенное исчезновение всего
+           вокруг и было тем самым щелчком на стыке страниц. */
+        :root.vt-leaving .links,
+        :root.vt-leaving .controls,
+        :root.vt-leaving .viewer,
+        :root.vt-leaving .footer,
+        :root.vt-leaving .cursor-glow,
+        :root.vt-leaving .link-hint {
+            /* Анимацию появления глушим, а не пережидаем. У панели и кнопки
+               она идёт с задержкой в четверть секунды, и клик вскоре после
+               загрузки попадал прямо в неё: анимация сильнее перехода, и
+               «Download PDF» продолжал проявляться поверх гашения. */
+            animation: none;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.16s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        :root.vt-pending .header-left h1,
+        :root.vt-pending .header-left .subtitle {
+            visibility: hidden;
+        }
+
+        /* ── Занавес ──────────────────────────────────────────────────────
+           Смена документа — это всегда обрыв: старый кадр гаснет, новый
+           появляется целиком и сразу. Никакой анимацией этот стык не
+           закрыть, потому что в этот момент не выполняется ни одна из двух
+           страниц. Поэтому уходящая затемняется до фона, а приходящая из
+           этого же фона проявляется — обрыв приходится на кадр, где обе
+           стороны выглядят одинаково.
+
+           Псевдоэлемент корня, а не узел в теле: он существует с первой
+           строки <head>, то есть раньше, чем браузер успевает что-то
+           нарисовать. */
+        :root.vt-veil::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 2147483000;
+            background: var(--bg);
+            pointer-events: none;
+            opacity: 0;
+            /* Коротко нарочно: занавес нужен ровно на стык документов, а не
+               как самостоятельное движение. Длиннее — и он читается как
+               пауза, ради которой гость ждёт. */
+            transition: opacity 0.18s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        :root.vt-veil.vt-shut::after {
+            opacity: 1;
         }
 
         /* Footer */
@@ -707,8 +963,8 @@
             }
 
             .links a svg {
-                width: 22px;
-                height: 22px;
+                width: 20.7px;
+                height: 20.7px;
             }
 
             .links a {
@@ -742,6 +998,9 @@
 
             #pdf-container img {
                 border-radius: 10px;
+            }
+
+            .sheet {
                 margin-bottom: 8px;
             }
 
@@ -769,6 +1028,7 @@
 
 <body>
     <div class="cursor-glow" id="cursor-glow"></div>
+    <div class="link-hint" id="link-hint" aria-hidden="true"></div>
     <div class="dot-bg"></div>
 
     <div class="page">
@@ -778,23 +1038,36 @@
                 <div class="subtitle">DevOps Engineer</div>
             </a>
             <div class="links">
+                <!-- viewBox у каждой иконки обрезан по границам её фигуры, а не
+                     взят «как нарисовано»: только так одинаковая ширина в CSS
+                     даёт одинаковый знак на экране. -->
+                <a class="i-blog" href="https://blog.cosmdandy.dev" target="_blank" rel="noopener" aria-label="Blog">
+                    <svg viewBox="2.8 3.2 18 18.4" fill="none">
+                        <path
+                            d="M5.2 16.8a2.4 2.4 0 110 4.8 2.4 2.4 0 010-4.8zM2.8 10.1a11.1 11.1 0 0111.1 11.1h-3.1A8 8 0 002.8 13.2v-3.1zM2.8 3.2A18 18 0 0120.8 21.2h-3.1A14.9 14.9 0 002.8 6.3V3.2z"
+                            fill="currentColor" />
+                    </svg>
+                    <span>Blog</span>
+                </a>
                 <a href="https://github.com/CosmDandy" target="_blank" rel="noopener" aria-label="GitHub">
-                    <svg viewBox="0 0 24 24" fill="none">
+                    <svg viewBox="2 2 20 19.51" fill="none">
                         <path
                             d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"
                             fill="currentColor" />
                     </svg>
                     <span>GitHub</span>
                 </a>
+                <!-- Самолётик без круга — тот же знак, что стоит в самом PDF
+                     резюме (FontAwesome telegram-plane). -->
                 <a href="https://t.me/CosmDandy" target="_blank" rel="noopener" aria-label="Telegram">
-                    <svg viewBox="0 0 24 24" fill="none">
+                    <svg viewBox="0.02 64.4 447.96 375.68" fill="none">
                         <path
-                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.06-.49-.83-.27-1.49-.42-1.43-.88.03-.24.37-.49 1.02-.74 3.99-1.74 6.65-2.89 7.99-3.44 3.8-1.58 4.59-1.86 5.1-1.87.11 0 .37.03.54.17.14.12.18.28.2.45-.01.06.01.24 0 .38z"
+                            d="M446.7 98.6l-67.6 318.8c-5.1 22.5-18.4 28.1-37.3 17.5l-103-75.9-49.7 47.8c-5.5 5.5-10.1 10.1-20.7 10.1l7.4-104.9 190.9-172.5c8.3-7.4-1.8-11.5-12.9-4.1L117.8 284 16.2 252.2c-22.1-6.9-22.5-22.1 4.6-32.7L418.2 66.4c18.4-6.9 34.5 4.1 28.5 32.2z"
                             fill="currentColor" />
                     </svg>
                     <span>Telegram</span>
                 </a>
-                <a href="https://www.linkedin.com/in/cosmdandy" target="_blank" rel="noopener" aria-label="LinkedIn">
+                <a class="i-linkedin" href="https://www.linkedin.com/in/cosmdandy" target="_blank" rel="noopener" aria-label="LinkedIn">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path
                             d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
@@ -804,6 +1077,205 @@
                 </a>
             </div>
         </div>
+
+        <script>
+        // ── Переезд имени на визитку и обратно ─────────────────────────────
+        // Строка «Timofey Kondrashin · DevOps Engineer» есть на обоих сайтах и
+        // набрана одинаково. Уходя, страница увозит строку туда, где та встанет
+        // на визитке, и пишет конечную точку в адрес; принимающая сторона
+        // подхватывает её оттуда же и довозит на место. Получается одно
+        // движение, разорванное загрузкой документа.
+        //
+        // Нативный cross-document переход сюда не годится: он работает только
+        // внутри одного origin, а cv.cosmdandy.dev и cosmdandy.dev — разные
+        // хосты. Тот же код зеркально стоит на стороне визитки.
+        (function () {
+            const KEY = 'vt';
+            const root = document.documentElement;
+            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const exit = document.querySelector('.header-left');
+            const parts = [exit.querySelector('h1'), exit.querySelector('.subtitle')];
+
+            // Переезда не будет — снимаем метку немедленно, иначе строка,
+            // спрятанная в <head> до расчёта, останется невидимой навсегда.
+            if (reduced) root.classList.remove('vt-pending');
+
+            // Меряем текст, а не элемент: на визитке заголовок центрирован и
+            // занимает всю ширину карточки, так что рамка блока пришлась бы
+            // мимо букв.
+            function textBox(el) {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const box = range.getBoundingClientRect();
+                return [box.left, box.top, parseFloat(getComputedStyle(el).fontSize)];
+            }
+
+            // Точка отсчёта — левый верх самих букв, а не блока. Иначе масштаб
+            // растягивает строку от угла контейнера, и при центрированном
+            // заголовке буквы приезжают мимо на десяток пикселей.
+            function place(el, from) {
+                const block = el.getBoundingClientRect();
+                const text = textBox(el);
+                el.style.transformOrigin = (text[0] - block.left) + 'px ' + (text[1] - block.top) + 'px';
+                el.style.transform = 'translate3d(' + (from[0] - text[0]) + 'px,'
+                    + (from[1] - text[1]) + 'px,0) scale(' + (from[2] / text[2]) + ')';
+            }
+
+            // ── Где строка стоит на соседнем сайте ───────────────────────
+            // Раньше это была формула по ширине окна, и она всё время мазала:
+            // то скроллбар съест пятнадцать пикселей, то у визитки схема
+            // подожмётся по высоте и шапка съедет. Промах в несколько пикселей
+            // виден как рывок на стыке страниц.
+            //
+            // Поэтому каждая сторона просто записывает своё место в cookie, а
+            // соседняя его читает. Домен у сайтов общий (cosmdandy.dev), так
+            // что cookie видна обоим; на стенде оба порта — тот же localhost,
+            // и это работает там же. Первый в жизни переход идёт по формуле,
+            // дальше — точно, и оно само подстраивается под размер окна.
+            const COOKIE_DOMAIN = location.hostname.endsWith('cosmdandy.dev')
+                ? '; domain=.cosmdandy.dev' : '';
+
+            function remember() {
+                const box = textBox(parts[0]).concat(textBox(parts[1]));
+                document.cookie = 'vt-cv=' + box.map(v => Math.round(v * 10) / 10).join(',')
+                    + ';path=/;max-age=604800;samesite=lax' + COOKIE_DOMAIN;
+            }
+
+            function known(key) {
+                const m = document.cookie.match(new RegExp('(?:^|; )' + key + '=([^;]*)'));
+                if (!m) return null;
+                const n = m[1].split(',').map(Number);
+                return n.length === 6 && n.every(v => isFinite(v)) ? n : null;
+            }
+
+            function exitPoint(el, i) {
+                const said = known('vt-card');
+                if (said) return said.slice(i * 3, i * 3 + 3);
+                // Запасной вариант на самый первый переход: визитка держит
+                // строку по центру — под схемой на широком экране, в карточке
+                // на узком.
+                const text = textBox(el);
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const w = range.getBoundingClientRect().width;
+                const wide = document.documentElement.clientWidth >= 821;
+                return [(document.documentElement.clientWidth - w) / 2, wide ? 85 : 177, text[2]];
+            }
+
+            // Занавес поднят из <head>; опускаем его, когда страница готова
+            // показаться. Раскладка резюме считается в первом же кадре, так
+            // что ждать загрузки превью незачем — картинка проявится сама, как
+            // и при обычном заходе.
+            function reveal() {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        root.classList.remove('vt-shut');
+                        setTimeout(function () { root.classList.remove('vt-veil'); }, 260);
+                    });
+                });
+            }
+
+            const params = new URLSearchParams(location.search);
+            if (params.get(KEY) && !reduced) {
+                // Прилетели переездом. Двигать здесь нечего: визитка метила в
+                // место, которое мы сами ей и назвали через cookie, — строка
+                // уже дома. Всё, что нужно, — не дать ей проиграть своё обычное
+                // появление, иначе это читается как «анимация во второй раз».
+                root.classList.add('vt-in');
+                exit.style.animation = 'none';
+                parts.forEach(function (el) { el.style.animation = 'none'; });
+                root.classList.remove('vt-pending');
+                reveal();
+
+                params.delete(KEY);
+                const rest = params.toString();
+                history.replaceState(null, '', location.pathname + (rest ? '?' + rest : ''));
+            } else {
+                // Занавес ставится в <head> по одному признаку — метке в
+                // адресе. Если переезда всё-таки не будет (метка битая, гость
+                // не выносит движения), убрать его обязано что-то другое,
+                // иначе страница останется под ним навсегда.
+                root.classList.remove('vt-veil', 'vt-shut');
+            }
+
+            // Записываем своё место: строка к этому моменту стоит там, где
+            // будет стоять всегда, — соседний сайт метит именно сюда.
+            if (document.readyState === 'loading') {
+                window.addEventListener('DOMContentLoaded', function () { setTimeout(remember, 1200); });
+            } else {
+                setTimeout(remember, 1200);
+            }
+            window.addEventListener('resize', function () { setTimeout(remember, 300); });
+
+            let primed = false;
+            document.addEventListener('mouseover', function (e) {
+                // Пока гость ведёт мышь к имени, визитка уже подгружается. Без
+                // этого между документами будет пустой кадр, и строка не
+                // переедет, а прыгнет.
+                if (primed || !e.target.closest('.header-left')) return;
+                primed = true;
+                const tag = document.createElement('link');
+                tag.rel = 'prefetch';
+                tag.href = exit.href;
+                document.head.appendChild(tag);
+            });
+
+            document.addEventListener('click', function (e) {
+                // Клик с модификатором — это «открыть в новой вкладке»;
+                // анимировать уход страницы, которая никуда не уходит, незачем.
+                if (reduced || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                if (!e.target.closest('.header-left')) return;
+                e.preventDefault();
+
+                const url = new URL(exit.href);
+                // Поднимаем шапку над остальной страницей на время перелёта:
+                // у листа резюме есть свой z-index, и строка уезжала под
+                // превью и панель зума, вместо того чтобы идти поверх них.
+                exit.style.position = 'relative';
+                exit.style.zIndex = '30';
+                // Отдельный слой: пока страница гасит превью и панель, главный
+                // поток занят, и без этого строка дёргалась вместо движения.
+                parts.forEach(function (el) { el.style.willChange = 'transform'; });
+                // Метку прилёта не снимаем — она глушит родные появления, и
+                // без неё браузер считает анимацию назначенной заново и
+                // проигрывает её посреди отъезда. Правило ухода стоит в стилях
+                // ниже правила прилёта, так что при равной длине побеждает оно.
+                parts.forEach(function (el, i) {
+                    const to = exitPoint(el, i);
+                    // Симметрично визитке: анимация появления сильнее перехода
+                    // и удержала бы строку на месте, попади клик в неё.
+                    el.style.animation = 'none';
+                    el.style.transition = 'transform 0.44s cubic-bezier(0.32, 0.72, 0, 1) 0.12s';
+                    place(el, to);
+                });
+                root.classList.add('vt-leaving');
+                // Занавес пока прозрачный: включать его в том же кадре, что и
+                // сам класс, нельзя — переходу не от чего отсчитывать.
+                root.classList.add('vt-veil');
+                // Затемнение идёт внахлёст с концом полёта: строка ещё едет,
+                // но фон уже сходится с тем, что покажет визитка. Полёт
+                // кончается на 560 мс — занавес смыкается ровно к этому
+                // моменту, ни раньше (иначе он съедает движение), ни позже.
+                setTimeout(function () { root.classList.add('vt-shut'); }, 380);
+
+                // Уходим, когда строка уже приехала, а занавес сошёлся: пишем
+                // в адрес не то место, куда она метила, а то, где она
+                // **фактически** оказалась. Раньше здесь стоял transitionend,
+                // и уход приходился ровно на конец полёта — теперь ждём ещё и
+                // занавес, иначе стык страниц опять виден.
+                let gone = false;
+                const go = function () {
+                    if (gone) return;
+                    gone = true;
+                    let actual = [];
+                    parts.forEach(function (el) { actual = actual.concat(textBox(el)); });
+                    url.searchParams.set(KEY, actual.map(v => Math.round(v * 10) / 10).join(','));
+                    location.href = url.toString();
+                };
+                setTimeout(go, 600);
+            }, true);
+        })();
+        </script>
 
         <div class="controls">
             <!-- LANG:multi:start -->
@@ -818,7 +1290,7 @@
             </div>
             <div class="controls-divider"></div>
             <a class="btn-download" id="download-btn" href="CV-Timofey-Kondrashin-en.pdf" download>Download PDF</a>
-            <div class="controls-divider"></div>
+            <div class="controls-divider theme-divider"></div>
             <button class="theme-switch" id="theme-switch" type="button"
                     aria-label="Сменить тему" title="Сменить тему">
                 <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -837,13 +1309,38 @@
             <div id="pdf-container">
                 <div class="glow"></div>
                 <!-- LANG:en:start -->
+                <!-- Вариант -sm (1240 px, 240 КБ) собирается в CI с самого
+                     начала, но до сих пор никуда не подключался: все, включая
+                     телефоны, качали разворот на 2480 px и 592 КБ. Контейнер
+                     шире 1000 CSS-пикселей не бывает, так что полный размер
+                     нужен только экранам с двойной плотностью. -->
                 <div id="pdf-pages-en">
-                    <img src="cv-en-1.webp" alt="CV Timofey Kondrashin — Page 1" width="2480" height="3508">
+                    <div class="sheet">
+                        <img src="cv-en-1.webp"
+                             srcset="cv-en-1-sm.webp 1240w, cv-en-1.webp 2480w"
+                             sizes="(max-width: 640px) 100vw, 1000px"
+                             alt="CV Timofey Kondrashin — Page 1" width="2480" height="3508"
+                             fetchpriority="high" decoding="async">
+                        <!-- Слой ссылок: build_pages.py подставляет сюда
+                             координаты из PDF. -->
+                        <!-- LINKS:en -->
+                    </div>
                 </div>
                 <!-- LANG:en:end -->
                 <!-- LANG:ru:start -->
+                <!-- loading="lazy" здесь работает как «не грузить вовсе»:
+                     контейнер скрыт, значит в зону видимости картинка не попадёт,
+                     пока не переключат язык. Без этого браузер качает и её тоже —
+                     display:none загрузку не отменяет. -->
                 <div id="pdf-pages-ru" style="display:none">
-                    <img src="cv-ru-1.webp" alt="CV Тимофей Кондрашин — Страница 1" width="2480" height="3508">
+                    <div class="sheet">
+                        <img src="cv-ru-1.webp"
+                             srcset="cv-ru-1-sm.webp 1240w, cv-ru-1.webp 2480w"
+                             sizes="(max-width: 640px) 100vw, 1000px"
+                             alt="CV Тимофей Кондрашин — Страница 1" width="2480" height="3508"
+                             loading="lazy" decoding="async">
+                        <!-- LINKS:ru -->
+                    </div>
                 </div>
                 <!-- LANG:ru:end -->
             </div>
@@ -888,6 +1385,51 @@
         window.zoomOut = function () {
             if (currentZoom > ZOOM_MIN) { currentZoom -= ZOOM_STEP; updateZoomDisplay(); }
         };
+
+        // Адрес под курсором — то же поведение, что на cosmdandy.dev.
+        (function () {
+            const hint = document.getElementById('link-hint');
+            // Длинный хвост режем: адрес сертификата — сотня знаков с хэшем,
+            // и подсказка растянулась бы во всю ширину окна. Читают в ней
+            // всё равно хост и начало пути.
+            const TAIL = 28;
+
+            function show(href, x, y) {
+                const m = /^(https?:\/\/|mailto:)(.*)$/.exec(href);
+                const tail = m ? m[2] : href;
+                const cut = tail.length > TAIL ? tail.slice(0, TAIL - 1) + '…' : tail;
+                hint.innerHTML = m
+                    ? '<span class="lh-scheme">' + m[1] + '</span>' + cut
+                    : cut;
+                hint.classList.add('on');
+                // Держим плашку в пределах окна: у правого края и вверху страницы
+                // она иначе уезжает за экран.
+                const w = hint.offsetWidth, h = hint.offsetHeight;
+                const left = Math.min(x + 18, window.innerWidth - w - 12);
+                const top = Math.min(Math.max(y - h - 14, 10), window.innerHeight - h - 10);
+                hint.style.transform = 'translate3d(' + left + 'px,' + top + 'px,0)';
+            }
+
+            function hide() {
+                hint.classList.remove('on');
+            }
+
+            document.addEventListener('mousemove', function (e) {
+                const a = e.target.closest('a[href]');
+                // Кнопка скачивания ведёт на файл рядом, а не на чужой сайт:
+                // подсказывать там нечего, да и плашка перекрыла бы саму кнопку.
+                if (!a || a.classList.contains('btn-download')) return hide();
+                const href = a.getAttribute('href');
+                if (!href || href.startsWith('#')) return hide();
+                show(href, e.clientX, e.clientY);
+            });
+
+            document.addEventListener('mouseleave', hide);
+            // На колесе и при смене языка ссылка под курсором уезжает, а
+            // плашка осталась бы висеть с чужим адресом.
+            window.addEventListener('scroll', hide, { passive: true });
+        })();
+
 
         // Cursor glow follower
         const cursorGlow = document.getElementById('cursor-glow');
@@ -957,17 +1499,76 @@
                 label(theme);
             }
 
-            btn.addEventListener('click', function () {
-                const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                try { localStorage.setItem('theme', next); } catch (e) {}
-                setTheme(next, true);
-            });
+            // Пока светлая выключена, слушать некого и незачем: и кнопка, и
+            // смена системной темы вели бы страницу туда, где её нет. Код
+            // остаётся рабочим — включается вместе с THEME_CHOICE.
+            if (THEME_CHOICE) {
+                btn.addEventListener('click', function () {
+                    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    try { localStorage.setItem('theme', next); } catch (e) {}
+                    setTheme(next, true);
+                });
 
-            systemLight.addEventListener('change', function (e) {
-                if (!saved()) setTheme(e.matches ? 'light' : 'dark', true);
-            });
+                systemLight.addEventListener('change', function (e) {
+                    if (!saved()) setTheme(e.matches ? 'light' : 'dark', true);
+                });
+            }
 
             label(document.documentElement.getAttribute('data-theme') || 'dark');
+        })();
+    </script>
+    <script>
+        // Отметка о сборке. Три стенда с виду неотличимы, и это регулярно
+        // сбивало: правка проверена — но на каком именно стенде? Строку в углу
+        // собираем из метки в шапке; кто её туда положил — дело пайплайна,
+        // здесь она только читается.
+        (function () {
+            var raw = (document.querySelector('meta[name="build"]') || {}).content || '';
+            var b = {};
+            raw.split(';').forEach(function (p) {
+                var i = p.indexOf('=');
+                if (i > 0) b[p.slice(0, i)] = p.slice(i + 1);
+            });
+            // Продакшен тем и отличается, что на нём отметки нет: там её стирает
+            // пайплайн выкатки. Пустая метка — нечего и рисовать.
+            var where = { local: 'локально', cloudflare: 'cloudflare' }[b.env];
+            if (!where) return;
+            var head = [where];
+            if (b.ref && b.ref !== '—') head.push(b.ref);
+            if (b.pr) head.push('PR #' + b.pr);
+
+            var el = document.createElement('div');
+            el.className = 'build-badge';
+            el.appendChild(document.createTextNode(head.join(' · ')));
+
+            // Хэш ведёт на pull request, если он есть, и на коммит, если нет:
+            // от «вижу поломку» до «вижу диф» одно нажатие. Плюс в конце хэша
+            // значит несохранённое в дереве — на коммит с ним не сошлёшься.
+            if (b.sha) {
+                // Разделитель здесь, а не в конце шапки: без штампа хэша нет
+                // вовсе, и точка повисала бы в воздухе — «локально · ».
+                el.appendChild(document.createTextNode(' · '));
+                var a = document.createElement('a');
+                a.textContent = b.sha;
+                a.href = 'https://github.com/' + (b.repo || 'CosmDandy/cv.cosmdandy.dev')
+                    + (b.pr ? '/pull/' + b.pr : '/commit/' + b.sha.replace('+', ''));
+                a.target = '_blank';
+                a.rel = 'noopener';
+                el.appendChild(a);
+            }
+
+            // Дату разворачиваем в часовом поясе смотрящего: она отвечает на
+            // «насколько это свежее», а этот вопрос всегда про своё время.
+            if (b.at) {
+                var d = new Date(b.at);
+                if (!isNaN(d)) {
+                    var p2 = function (n) { return String(n).padStart(2, '0'); };
+                    el.appendChild(document.createTextNode(' · '
+                        + p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear()
+                        + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes())));
+                }
+            }
+            document.body.appendChild(el);
         })();
     </script>
 </body>
