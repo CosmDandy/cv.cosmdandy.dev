@@ -38,7 +38,7 @@ jobs:
       # образ выполнял бы произвольный код с секретами этой job.
       # Обновление: пересобрать образ через docker-image.yml и подставить сюда
       # digest, который тот workflow печатает в summary.
-      image: ghcr.io/cosmdandy/cv-texlive@sha256:309e0e1214e8f7a7153e29f5eef484f549058f18b49ceafe73cb422dbe5bf5e9 # :latest на 2026-07-26
+      image: ghcr.io/cosmdandy/cv-texlive@sha256:976d5bd24c62f6067466f2e05978713fa7545567b338ba646276ae7f5698f2b8 # :latest на 2026-08-04, с pypdf
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
