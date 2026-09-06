@@ -65,3 +65,13 @@ make build-example
 # Generate .tex only (no LaTeX required)
 make render
 ```
+
+## Credits
+
+`template/developercv.cls` is the [Developer CV](https://www.latextemplates.com/template/developer-cv)
+class by Jan Vorisek, Jan Küster and Vel (LaTeXTemplates.com), MIT.
+
+## License
+
+MIT — see [LICENSE](LICENSE). The licence covers the build tooling and templates;
+your own `cv-data.yaml` is yours and never enters the repository.
