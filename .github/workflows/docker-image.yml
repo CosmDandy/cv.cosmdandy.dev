@@ -15,6 +15,8 @@ jobs:
     permissions:
       contents: read # checkout
       packages: write # push образа в GHCR
+      id-token: write # OIDC-токен для подписи провенанса
+      attestations: write # публикация attestation репозитория
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -37,6 +39,16 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/cosmdandy/cv-texlive:latest
+
+      # Подписанный провенанс на собранный digest. build-deploy.yml пинит образ
+      # по digest, и attestation даёт проверить, что этот digest собран здесь:
+      #   gh attestation verify oci://ghcr.io/cosmdandy/cv-texlive:latest --owner CosmDandy
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/cosmdandy/cv-texlive
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
 
       # build-deploy.yml тянет образ по digest, а не по :latest. Печатаем digest
       # сюда, чтобы после пересборки его было откуда скопировать в пин.
