@@ -1,5 +1,8 @@
 # CV-as-Code
 
+[![build](https://github.com/CosmDandy/cv.cosmdandy.dev/actions/workflows/build-deploy.yml/badge.svg)](https://github.com/CosmDandy/cv.cosmdandy.dev/actions/workflows/build-deploy.yml)
+[![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
+[![license](https://img.shields.io/github/license/CosmDandy/cv.cosmdandy.dev)](LICENSE)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/CosmDandy/cv.cosmdandy.dev)
 
 Templated resume built with LaTeX, generated from YAML data via Jinja2, compiled and deployed automatically through GitHub Actions to GitHub Pages.
